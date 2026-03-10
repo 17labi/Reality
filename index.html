@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reality Check Dashboard | BUET Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Firebase SDKs (Compat version for reliability) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        
+        body { 
+            background-color: #020617; 
+            color: #f8fafc; 
+            margin: 0; 
+            font-family: 'Hind Siliguri', sans-serif; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @keyframes float-rtl {
+            0% { transform: translateX(110vw); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateX(-150vw); opacity: 0; }
+        }
+
+        .animate-float-rtl {
+            animation: float-rtl linear infinite;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .neo-button {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .neo-button:active {
+            transform: scale(0.95);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtSqPxbB_-tuOWbor-ipHPrtx4gA3yNGA",
+            authDomain: "buet-tracker.firebaseapp.com",
+            projectId: "buet-tracker",
+            storageBucket: "buet-tracker.firebasestorage.app",
+            messagingSenderId: "296969097637",
+            appId: "1:296969097637:web:3d77b2818501f2951c184c",
+            measurementId: "G-0CS4ZWD0BH",
+            databaseURL: "https://buet-tracker-default-rtdb.firebaseio.com/"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        const MOTIVATIONAL_QUOTES = [
+            "বুয়েট ক্যাম্পাস তোমার অপেক্ষায়।",
+            "কষ্ট আজ করলে, মিষ্টি কাল হবে।",
+            "নিয়মিত পরিশ্রম মেধার চেয়েও বেশি শক্তিশালী।",
+            "ইঞ্জিনিয়ারিং মানে শুধু ডিগ্রি না, এটা একটা চিন্তা-ধারা।",
+	     "Tough Time Creates a Tough Man",
+            "এইচএসসি বেস, বুয়েট ড্রিম। একটাও যেন হাতছাড়া না হয়。",
+            "আজকের পড়ালেখাই কালকের সফলতার চাবিকাঠি।"
+        ];
+
+        const QURAN_AYATS = [
+            "নিশ্চয়ই কষ্টের সাথেই স্বস্তি রয়েছে। (সুরা ইনশিরাহ: ৬)",
+            "আল্লাহ কাউকে তার সাধ্যাতীত কোনো কাজের ভার দেন না। (সুরা বাকারা: ২৮৬)",
+            "তোমরা নিরাশ হয়ো না এবং দুঃখ করো না, তোমরাই বিজয়ী হবে যদি তোমরা মুমিন হও। (সুরা আল-ইমরান: ১৩৯)",
+            "মানুষ তা-ই পায় যা সে চেষ্টা করে। (সুরা নাজম: ৩৯)",
+            "আল্লাহ ধৈর্যশীলদের ভালোবাসেন। (সুরা আল-ইমরান: ১৪৬)",
+            "আল্লাহর রহমত থেকে নিরাশ হয়ো না। (সুরা ইউসুফ: ৮৭)",
+            "যে আল্লাহর ওপর ভরসা করে, তার জন্য তিনিই যথেষ্ট। (সুরা তালাক: ৩)"
+        ];
+
+        const FloatingNote = ({ text, index }) => {
+            const style = useMemo(() => ({
+                top: `${10 + (index * 15) % 80}%`,
+                animationDelay: `${index * 4}s`,
+                animationDuration: `${80 + Math.random() * 40}s`,
+                fontSize: window.innerWidth < 768 ? '16px' : '22px'
+            }), [index]);
+
+            return (
+                <div 
+                    className="fixed z-[9999] whitespace-nowrap pointer-events-none text-red-500/90 font-black italic select-none animate-float-rtl glow-text"
+                    style={style}
+                >
+                    * {text}
+                </div>
+            );
+        };
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [history, setHistory] = useState([]);
+            const [notes, setNotes] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [newNote, setNewNote] = useState("");
+            const [showCalendar, setShowCalendar] = useState(false);
+            const [showNoteModal, setShowNoteModal] = useState(false);
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [quote] = useState(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
+            const [randomAyat] = useState(QURAN_AYATS[Math.floor(Math.random() * QURAN_AYATS.length)]);
+            const [timeLeft, setTimeLeft] = useState({ hsc: { d: 0, h: 0 }, buet: { d: 0, h: 0 } });
+
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        await auth.signInAnonymously();
+                    } catch (err) {
+                        setLoading(false);
+                    }
+                };
+                initAuth();
+
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    if (u) {
+                        setUser(u);
+                        database.ref(`users/${u.uid}/history`).on('value', (snap) => {
+                            const val = snap.val();
+                            setHistory(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).sort((a,b) => b.id.localeCompare(a.id)) : []);
+                            setLoading(false);
+                        });
+                        database.ref(`users/${u.uid}/notes`).on('value', (snap) => {
+                            const val = snap.val();
+                            setNotes(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : []);
+                        });
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
+
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    const now = new Date();
+                    const calc = (target) => {
+                        const diff = new Date(target) - now;
+                        return diff > 0 ? {
+                            d: Math.floor(diff / 86400000),
+                            h: Math.floor((diff / 3600000) % 24)
+                        } : { d: 0, h: 0 };
+                    };
+                    setTimeLeft({ hsc: calc('2026-06-30'), buet: calc('2026-10-15') });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            const handleChoice = (status, dateId = null) => {
+                if (!user) return;
+                const id = dateId || new Date().toISOString().split('T')[0];
+                database.ref(`users/${user.uid}/history/${id}`).set({
+                    status,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            };
+
+            const addNote = () => {
+                if (!user || !newNote.trim()) return;
+                database.ref(`users/${user.uid}/notes`).push().set({
+                    text: newNote.trim(),
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                setNewNote("");
+            };
+
+            // Progress Logic: Approach based on total count
+            // Every 'yes' adds 3.33%, every 'no' subtracts 3.33%
+            // Never reaches 0 or 100 fully because of Math.max/min clamping at slightly less
+            const progressValue = useMemo(() => {
+                const yesCount = history.filter(h => h.status === 'yes').length;
+                const noCount = history.filter(h => h.status === 'no').length;
+                const net = yesCount - noCount;
+                const step = 3.33; // ~30 days to reach extreme ends
+                let val = net * step;
+                return Math.max(-95, Math.min(95, val));
+            }, [history]);
+
+            const streak = useMemo(() => {
+                let s = 0;
+                for (let item of history) {
+                    if (item.status === 'yes') s++; else break;
+                }
+                return s;
+            }, [history]);
+
+            const todayStatus = history.find(h => h.id === new Date().toISOString().split('T')[0])?.status;
+            const yesTotal = history.filter(h => h.status === 'yes').length;
+            const noTotal = history.filter(h => h.status === 'no').length;
+
+            if (loading) return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-950">
+                    <div className="text-center space-y-4">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p className="text-blue-500 font-bold tracking-widest animate-pulse">লোড হচ্ছে...</p>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen pb-20 px-4 pt-6 md:pt-10 max-w-2xl mx-auto relative">
+                    
+                    {/* Floating Notes */}
+                    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[9999]">
+                        {notes.map((n, i) => <FloatingNote key={n.id} text={n.text} index={i} />)}
+                    </div>
+
+                    {/* Progressive Balance Bar */}
+                    <div className="sticky top-4 z-[50] mb-8">
+                        <div className="glass rounded-2xl p-4 shadow-2xl border-white/20">
+                            <div className="flex justify-between text-[10px] font-black italic mb-2 tracking-widest">
+                                <span className={progressValue < 0 ? "text-red-500" : "text-slate-500"}>LOSER</span>
+                                <span className={progressValue > 0 ? "text-blue-400" : "text-slate-500"}>BUETIAN</span>
+                            </div>
+                            <div className="h-4 bg-slate-900/80 rounded-full overflow-hidden flex relative border border-white/5">
+                                <div className="absolute inset-0 flex justify-center"><div className="w-0.5 h-full bg-white/40 z-10" /></div>
+                                
+                                {/* Red Side (Left) */}
+                                <div className="flex-1 flex justify-end">
+                                    <div 
+                                        className="h-full bg-gradient-to-l from-red-600 to-red-900 transition-all duration-700 ease-out" 
+                                        style={{ width: progressValue < 0 ? `${Math.abs(progressValue)}%` : '0%' }} 
+                                    />
+                                </div>
+                                
+                                {/* Blue Side (Right) */}
+                                <div className="flex-1 flex justify-start">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-blue-600 to-blue-900 transition-all duration-700 ease-out" 
+                                        style={{ width: progressValue > 0 ? `${progressValue}%` : '0%' }} 
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-center text-[8px] text-slate-500 mt-2 font-bold uppercase tracking-tighter">
+                                {progressValue === 0 ? "Neutral State" : progressValue > 0 ? "তুমি পারবে ইনশাল্লাহ" : "You are gonna lose again"}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Header */}
+                    <header className="text-center mb-8 space-y-4">
+                        <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">
+                          এটাই<span className="text-blue-500"> বাস্তবতা</span>
+                        </h1>
+                        <div className="glass px-4 py-2 rounded-xl inline-flex items-center gap-2 max-w-[90%] mx-auto">
+                            <Icon name="quote" size={14} className="text-blue-500 shrink-0" />
+                            <p className="text-slate-400 italic text-xs md:text-sm truncate">{quote}</p>
+                        </div>
+                    </header>
+
+                    {/* Countdowns */}
+                    <div className="grid grid-cols-2 gap-3 mb-8">
+                        <div className="glass p-4 rounded-2xl text-center border-l-4 border-l-blue-500">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">HSC 2026</p>
+                            <p className="text-lg md:text-xl font-mono font-black">{timeLeft.hsc.d}d <span className="text-blue-500">{timeLeft.hsc.h}h</span></p>
+                        </div>
+                        <div className="glass p-4 rounded-2xl text-center border-l-4 border-l-purple-500">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">BUET ADMISSION</p>
+                            <p className="text-lg md:text-xl font-mono font-black">{timeLeft.buet.d}d <span className="text-purple-500">{timeLeft.buet.h}h</span></p>
+                        </div>
+                    </div>
+
+                    {/* Main Interaction Area */}
+                    <main className="glass border-2 border-slate-800/50 p-6 md:p-10 rounded-[2.5rem] text-center mb-8 relative overflow-hidden">
+                        <div className="absolute top-4 right-6 flex gap-3">
+                            <button onClick={() => setShowNoteModal(true)} className="p-2 text-slate-400 hover:text-blue-400 transition-colors"><Icon name="sticky-note" /></button>
+                            <button onClick={() => setShowCalendar(true)} className="p-2 text-slate-400 hover:text-blue-400 transition-colors"><Icon name="calendar-days" /></button>
+                        </div>
+
+                        <div className="space-y-6 pt-4">
+                            <h2 className="text-xl md:text-3xl font-black italic leading-tight">আজকে কি তুই নিজের <br/><span className="text-blue-500 underline decoration-2 underline-offset-4">সর্বোচ্চটা</span> দিসোস?</h2>
+                            
+                            {todayStatus ? (
+                                <div className="py-4 animate-in fade-in zoom-in duration-500 space-y-6">
+                                    <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-xl font-black ${todayStatus === 'yes' ? 'bg-green-600 shadow-lg shadow-green-900/20' : 'bg-red-600 shadow-lg shadow-red-900/20'}`}>
+                                        <Icon name={todayStatus === 'yes' ? 'check-circle' : 'x-circle'} />
+                                        {todayStatus === 'yes' ? 'হ্যাঁ, দিয়েছি!' : 'না,আমি অলস ।'}
+                                    </div>
+                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-4 animate-in slide-in-from-top duration-700">
+                                        <p className="text-blue-400 text-sm md:text-base font-medium italic">"{randomAyat}"</p>
+                                    </div>
+                                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">আগামীকাল আবার লড়াই হবে ইনশাল্লাহ।</p>
+                                </div>
+                            ) : (
+                                <div className="flex justify-center gap-4">
+                                    <button onClick={() => handleChoice('yes')} className="neo-button flex-1 max-w-[140px] py-5 bg-blue-600 rounded-2xl text-2xl font-black italic shadow-xl shadow-blue-900/20 hover:bg-blue-500">হ্যাঁ</button>
+                                    <button onClick={() => handleChoice('no')} className="neo-button flex-1 max-w-[140px] py-5 glass border-slate-700 rounded-2xl text-2xl font-black italic hover:bg-red-900/20 hover:border-red-900 transition-all">না</button>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-4 gap-2 mb-8">
+                        {[
+                            { label: 'Streak', val: streak, icon: 'flame', color: 'text-orange-500' },
+                            { label: 'Success', val: yesTotal, icon: 'target', color: 'text-green-500' },
+                            { label: 'Failure', val: noTotal, icon: 'info', color: 'text-red-500' },
+                            { label: 'Ratio', val: (history.length ? Math.round((yesTotal/history.length)*100) : 0) + '%', icon: 'trending-up', color: 'text-blue-400' }
+                        ].map((s, i) => (
+                            <div key={i} className="glass p-3 rounded-xl text-center">
+                                <Icon name={s.icon} size={16} className={`${s.color} mb-1`} />
+                                <p className="text-[8px] font-black text-slate-500 uppercase">{s.label}</p>
+                                <p className="text-sm font-black">{s.val}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* History */}
+                    <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 flex items-center gap-2">
+                            <Icon name="history" size={12} /> Recent History
+                        </h3>
+                        <div className="glass rounded-2xl divide-y divide-slate-800/50 max-h-60 overflow-y-auto">
+                            {history.length === 0 ? (
+                                <p className="p-10 text-center text-slate-600 italic text-sm">কোনো রেকর্ড নেই</p>
+                            ) : history.slice(0, 7).map(item => (
+                                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'yes' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`} />
+                                        <div>
+                                            <p className="text-xs font-bold">{item.id.split('-').reverse().join('/')}</p>
+                                            <p className="text-[9px] text-slate-500 uppercase">{new Date(item.id).toLocaleDateString('bn-BD', { weekday: 'long' })}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${item.status === 'yes' ? 'text-green-500' : 'text-red-500'}`}>{item.status === 'yes' ? 'সফল' : 'ব্যর্থ'}</span>
+                                        <button onClick={() => database.ref(`users/${user.uid}/history/${item.id}`).remove()} className="text-slate-700 hover:text-red-500 transition-colors"><Icon name="trash-2" size={14}/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Note Modal */}
+                    {showNoteModal && (
+                        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-300">
+                            <div className="glass w-full max-w-lg rounded-t-[2rem] md:rounded-[2rem] p-6 space-y-6 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-black italic text-blue-400">ভাসমান নোট সেট করুন</h3>
+                                    <button onClick={() => setShowNoteModal(false)} className="p-2 text-slate-400 hover:text-white"><Icon name="x" /></button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input type="text" value={newNote} onChange={e => setNewNote(e.target.value)} onKeyPress={e => e.key === 'Enter' && addNote()} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none" placeholder="পড়ার কোনো টপিক বা লক্ষ্য..." />
+                                    <button onClick={addNote} className="bg-blue-600 p-3 rounded-xl hover:bg-blue-500"><Icon name="plus" /></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                                    {notes.length === 0 ? <p className="text-center text-slate-700 py-10 italic">কোনো নোট নেই</p> : notes.map(n => (
+                                        <div key={n.id} className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center group">
+                                            <p className="text-sm text-slate-300">* {n.text}</p>
+                                            <button onClick={() => database.ref(`users/${user.uid}/notes/${n.id}`).remove()} className="text-slate-600 group-hover:text-red-500"><Icon name="trash-2" size={14}/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Calendar Modal */}
+                    {showCalendar && (
+                        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                            <div className="glass w-full max-w-xs rounded-[2rem] p-6 space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-lg font-black italic text-blue-400">পুরানো ইতিহাস</h3>
+                                    <button onClick={() => setShowCalendar(false)} className="text-slate-400"><Icon name="x" /></button>
+                                </div>
+                                <div className="space-y-4">
+                                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-center outline-none focus:border-blue-500" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button onClick={() => {handleChoice('yes', selectedDate); setShowCalendar(false);}} className="py-4 bg-green-600 rounded-xl font-black">হ্যাঁ</button>
+                                        <button onClick={() => {handleChoice('no', selectedDate); setShowCalendar(false);}} className="py-4 bg-red-600 rounded-xl font-black">না</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <footer className="text-center py-10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
+                        বুয়েট অথবা কিছুই না - 
+			  পড় নাইলে মর
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
