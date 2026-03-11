@@ -143,27 +143,97 @@
 
             "যে আল্লাহর ওপর ভরসা করে, তার জন্য তিনিই যথেষ্ট। (সুরা তালাক: ৩)"        ];
 
+                // গ্লোবাল ট্র্যাকার
+        const occupiedLanes = new Array(12).fill(false);
+        let activeNotesCount = 0; // স্ক্রিনে বর্তমানে কয়টি নোট আছে তা ট্র্যাক করবে
+
         const FloatingNote = ({ text, index }) => {
-            const [style, setStyle] = useState(null);
+            const noteRef = useRef(null);
 
             useEffect(() => {
-                // Randomize each note's appearance
-                const randomTop = Math.floor(Math.random() * 80) + 10;
-                const randomDuration = Math.floor(Math.random() * 40) + 40; // 40s to 80s
-                const randomDelay = Math.random() * -100; // Random start point in animation cycle
+                const element = noteRef.current;
+                if (!element) return;
 
-                setStyle({
-                    top: `${randomTop}%`,
-                    animationDuration: `${randomDuration}s`,
-                    animationDelay: `${randomDelay}s`,
-                    fontSize: window.innerWidth < 768 ? '16px' : '22px'
-                });
-            }, []);
+                let currentLane = -1;
+                let isNoteActive = false;
 
-            if (!style) return null;
+                const startFloating = () => {
+                    // ১. স্ক্রিনে ৬টির বেশি নোট থাকলে ওয়েট করবে
+                    if (activeNotesCount >= 6) {
+                        setTimeout(startFloating, 2000 + Math.random() * 3000); // ২-৫ সেকেন্ড পর আবার চেক করবে
+                        return;
+                    }
+
+                    // ২. খালি গলি খোঁজা
+                    const availableLanes = occupiedLanes
+                        .map((occ, i) => occ ? null : i)
+                        .filter(i => i !== null);
+                    
+                    if (availableLanes.length === 0) {
+                        setTimeout(startFloating, 1000);
+                        return;
+                    }
+
+                    // ৩. নোট একটিভ করা এবং লেন দখল করা
+                    const randomIdx = Math.floor(Math.random() * availableLanes.length);
+                    currentLane = availableLanes[randomIdx];
+                    occupiedLanes[currentLane] = true;
+                    activeNotesCount++;
+                    isNoteActive = true;
+
+                    // ৪. স্টাইল এবং পজিশন (গ্যাপ বাড়ানোর জন্য translateX এর শুরুটা দূরে রাখা হয়েছে)
+                    const topPos = 12 + (currentLane * 7); 
+                    element.style.top = `${topPos}%`;
+                    element.style.visibility = 'visible';
+
+                    // ৫. র্যান্ডম স্পিড
+                    const duration = Math.floor(Math.random() * 10000) + 20000; // ২০-৩০ সেকেন্ড
+
+                    const animation = element.animate([
+                        { transform: 'translateX(120vw)' }, // স্ক্রিনের অনেক বাইরে থেকে শুরু
+                        { transform: 'translateX(-180vw)' } // স্ক্রিন পুরোপুরি পার হওয়া
+                    ], {
+                        duration: duration,
+                        easing: 'linear',
+                        delay: 0 
+                    });
+
+                    animation.onfinish = () => {
+                        // ৬. রিসেট লজিক: স্ক্রিন পার হলে লেন এবং কাউন্ট খালি করে দেওয়া
+                        if (currentLane !== -1) occupiedLanes[currentLane] = false;
+                        if (isNoteActive) {
+                            activeNotesCount--;
+                            isNoteActive = false;
+                        }
+                        element.style.visibility = 'hidden';
+                        
+                        // নতুন সাইকেল শুরুর আগে র্যান্ডম গ্যাপ দেওয়া
+                        setTimeout(startFloating, 1000 + Math.random() * 5000);
+                    };
+                };
+
+                // শুরুতে সব নোট ইনভিজিবল থাকবে
+                element.style.visibility = 'hidden';
+                
+                // প্রথমবার একেকটি নোট একেক সময় ট্রাই করা শুরু করবে যাতে শুরুতে ধাক্কা না লাগে
+                const initialStartTimeout = setTimeout(startFloating, index * 1500);
+
+                return () => {
+                    clearTimeout(initialStartTimeout);
+                    if (currentLane !== -1) occupiedLanes[currentLane] = false;
+                    if (isNoteActive) activeNotesCount--;
+                    if (element) {
+                        element.getAnimations().forEach(anim => anim.cancel());
+                    }
+                };
+            }, [index]);
 
             return (
-                <div className="fixed z-[9999] whitespace-nowrap pointer-events-none text-red-500/90 font-black italic select-none animate-float-rtl glow-text" style={style}>
+                <div 
+                    ref={noteRef}
+                    className="fixed z-[9999] whitespace-nowrap pointer-events-none text-red-500/90 font-black italic select-none glow-text"
+                    style={{ left: 0, willChange: 'transform', visibility: 'hidden' }}
+                >
                     * {text}
                 </div>
             );
@@ -180,7 +250,20 @@
             const [showNoteModal, setShowNoteModal] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-            
+            const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+const alarmInterval = useRef(null);
+
+// অ্যালার্ম বন্ধ করার ফাংশন
+const stopAlarm = () => {
+    if (alarmInterval.current) {
+        clearInterval(alarmInterval.current);
+        alarmInterval.current = null;
+    }
+    setIsAlarmPlaying(false);
+    setTimerSeconds(0);
+    setActiveTimer(null);
+};
+
             const [timers, setTimers] = useState([]);
             const [activeTimer, setActiveTimer] = useState(null);
             const [timerSeconds, setTimerSeconds] = useState(0);
@@ -207,8 +290,16 @@
             const [buetTarget, setBuetTarget] = useState('2026-10-15');
             const [timeLeft, setTimeLeft] = useState({ hsc: { d: 0, h: 0 }, buet: { d: 0, h: 0 } });
 
-            const [quote] = useState(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
-            const [randomAyat] = useState(QURAN_AYATS[Math.floor(Math.random() * QURAN_AYATS.length)]);
+            // আজকের তারিখ অনুযায়ী একটি ফিক্সড ইনডেক্স তৈরি করা
+const todayIndex = useMemo(() => {
+    const today = new Date();
+    // বছর, মাস এবং দিন যোগ করে একটি ইউনিক সংখ্যা তৈরি
+    return (today.getFullYear() * 100) + (today.getMonth() + 1) + today.getDate();
+}, []);
+
+const quote = useMemo(() => MOTIVATIONAL_QUOTES[todayIndex % MOTIVATIONAL_QUOTES.length], [todayIndex]);
+const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [todayIndex]);
+
 
             const handleGoogleLogin = async () => {
                 try { await auth.signInWithPopup(googleProvider); } catch (err) { console.error("Login Error:", err); }
@@ -250,34 +341,49 @@
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
 
+                        useEffect(() => {
+    let interval;
+    if (isTimerRunning && timerSeconds > 0) {
+        interval = setInterval(() => setTimerSeconds(prev => prev - 1), 1000);
+    } else if (timerSeconds === 0 && isTimerRunning) {
+        setIsTimerRunning(false);
+        setIsAlarmPlaying(true); 
+        
+        // কন্টিনিউয়াস বিপ সাউন্ড শুরু
+        if (!alarmInterval.current) {
+            alarmInterval.current = setInterval(() => {
+                playBeep();
+            }, 1000);
+        }
+    }
+    return () => clearInterval(interval);
+}, [isTimerRunning, timerSeconds]);
+
+            // কাউন্টডাউন ক্যালকুলেশন লজিক
             useEffect(() => {
-                const timer = setInterval(() => {
-                    const now = new Date();
-                    const calc = (target) => {
-                        const diff = new Date(target) - now;
-                        return diff > 0 ? {
-                            d: Math.floor(diff / 86400000),
-                            h: Math.floor((diff / 3600000) % 24)
-                        } : { d: 0, h: 0 };
-                    };
-                    setTimeLeft({ hsc: calc(hscTarget), buet: calc(buetTarget) });
-                }, 1000);
+                const calculateTime = () => {
+                    const now = new Date().getTime();
+                    
+                    const hscDiff = new Date(hscTarget).getTime() - now;
+                    const buetDiff = new Date(buetTarget).getTime() - now;
+
+                    setTimeLeft({
+                        hsc: {
+                            d: Math.max(0, Math.floor(hscDiff / (1000 * 60 * 60 * 24))),
+                            h: Math.max(0, Math.floor((hscDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
+                        },
+                        buet: {
+                            d: Math.max(0, Math.floor(buetDiff / (1000 * 60 * 60 * 24))),
+                            h: Math.max(0, Math.floor((buetDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
+                        }
+                    });
+                };
+
+                calculateTime(); // শুরুতে একবার রান হবে
+                const timer = setInterval(calculateTime, 1000 * 60); // প্রতি এক মিনিটে আপডেট হবে
                 return () => clearInterval(timer);
             }, [hscTarget, buetTarget]);
 
-            useEffect(() => {
-                let interval;
-                if (isTimerRunning && timerSeconds > 0) {
-                    interval = setInterval(() => setTimerSeconds(prev => prev - 1), 1000);
-                } else if (timerSeconds === 0 && isTimerRunning) {
-                    setIsTimerRunning(false);
-                    playBeep();
-                    setTimeout(playBeep, 1200);
-                    alert("সময় শেষ!");
-                    setActiveTimer(null);
-                }
-                return () => clearInterval(interval);
-            }, [isTimerRunning, timerSeconds]);
 
             const startTimer = (t) => {
                 setActiveTimer(t);
@@ -498,18 +604,32 @@
                             <button onClick={addCustomTimer} className="text-blue-500"><Icon name="plus-circle" size={18} /></button>
                         </div>
                         
-                        {activeTimer && (
-                            <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl p-6 mb-4 text-center">
-                                <p className="text-xs font-bold text-blue-400 uppercase mb-1">{activeTimer.label}</p>
-                                <p className="text-5xl font-mono font-black mb-4">{formatTime(timerSeconds)}</p>
-                                <div className="flex justify-center gap-3">
-                                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="bg-blue-600 px-6 py-2 rounded-xl font-bold">
-                                        {isTimerRunning ? 'Pause' : 'Resume'}
-                                    </button>
-                                    <button onClick={() => {setIsTimerRunning(false); setTimerSeconds(0); setActiveTimer(null);}} className="bg-slate-800 px-6 py-2 rounded-xl font-bold">Stop</button>
-                                </div>
-                            </div>
-                        )}
+                                             {activeTimer && (
+    <div className={`border-2 rounded-2xl p-6 mb-4 text-center transition-all duration-300 ${isAlarmPlaying ? 'bg-red-600/40 border-red-500 animate-pulse' : 'bg-blue-600/20 border-blue-500/30'}`}>
+        <p className="text-xs font-bold text-blue-400 uppercase mb-1">{activeTimer.label}</p>
+        
+        {isAlarmPlaying ? (
+            <div className="py-2">
+                <p className="text-2xl font-black text-white glow-text mb-4 uppercase italic">Time's Up! Focus!</p>
+                <button onClick={stopAlarm} className="bg-white text-red-600 px-8 py-3 rounded-xl font-black shadow-lg neo-button">
+                    STOP ALARM
+                </button>
+            </div>
+        ) : (
+            <>
+                <p className="text-5xl font-mono font-black mb-4">{formatTime(timerSeconds)}</p>
+                <div className="flex justify-center gap-3">
+                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="bg-blue-600 px-6 py-2 rounded-xl font-bold">
+                        {isTimerRunning ? 'Pause' : 'Resume'}
+                    </button>
+                    <button onClick={() => {setIsTimerRunning(false); setTimerSeconds(0); setActiveTimer(null);}} className="bg-slate-800 px-6 py-2 rounded-xl font-bold">Stop</button>
+                </div>
+            </>
+        )}
+    </div>
+)}
+
+
 
                         <div className="flex gap-2 overflow-x-auto pb-2 scroll-hide">
                             {timers.map(t => (
