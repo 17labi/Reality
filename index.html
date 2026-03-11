@@ -63,13 +63,23 @@
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
+
+        .graph-bar {
+            transition: height 1s ease-out;
+        }
+
+        .calendar-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         const firebaseConfig = {
             apiKey: "AIzaSyBtSqPxbB_-tuOWbor-ipHPrtx4gA3yNGA",
@@ -111,6 +121,27 @@
             "মানুষ তা-ই পায় যা সে চেষ্টা করে। (সুরা নাজম: ৩৯)",
             "আল্লাহ ধৈর্যশীলদের ভালোবাসেন। (সুরা আল-ইমরান: ১৪৬)",
             "আল্লাহর রহমত থেকে নিরাশ হয়ো না। (সুরা ইউসুফ: ৮৭)",
+             "নিশ্চয়ই আল্লাহ ধৈর্যশীলদের সাথে আছেন। (সুরা বাকারা: ১৫৩)",
+ "আর তোমরা ধৈর্য ও সালাতের মাধ্যমে সাহায্য প্রার্থনা করো। (সুরা বাকারা: ৪৫)",
+ "যে আল্লাহকে ভয় করে, তিনি তার জন্য নিষ্কৃতির পথ বের করে দেন। (সুরা তালাক: ২)",
+ "জেনে রেখো, আল্লাহর জিকিরেই অন্তরসমূহ প্রশান্ত হয়। (সুরা রাদ: ২৮)",
+ "আমি তোমাদের খুব কাছেই আছি। (সুরা বাকারা: ১৮৬)",
+ "যদি তোমরা কৃতজ্ঞতা প্রকাশ করো, তবে আমি অবশ্যই তোমাদেরকে আরও বাড়িয়ে দেব। (সুরা ইব্রাহিম: ৭)",
+ "আমার রহমত সব বস্তুকে পরিবেষ্টিত করে আছে। (সুরা আরাফ: ১৫৬)",
+ "তুমি তোমার রবের ফয়সালার অপেক্ষায় ধৈর্য ধারণ করো, নিশ্চয়ই তুমি আমার চোখের সামনেই আছো। (সুরা তুর: ৪৮)",
+ "আল্লাহ আমাদের ভাগ্যে যা লিখে রেখেছেন তা ছাড়া আর কিছুই আমাদের ওপর আপতিত হবে না। (সুরা তাওবা: ৫১)",
+ "তোমরা আমাকে ডাকো, আমি তোমাদের ডাকে সাড়া দেব। (সুরা গাফির: ৬০)",
+ "আল্লাহর রহমত থেকে নিরাশ হয়ো না। নিশ্চয়ই আল্লাহ সমস্ত গুনাহ ক্ষমা করে দেন। (সুরা যুমার: ৫৩)",
+ "তিনিই মৃত্যু ও জীবন সৃষ্টি করেছেন যাতে তোমাদের পরীক্ষা করতে পারেন। (সুরা মুলক: ২)",
+"পৃথিবীর কোনো বিচরণশীল প্রাণী নেই যার রিযিকের দায়িত্ব আল্লাহর ওপর নেই। (সুরা হুদ: ৬)",
+ "হে মানুষ! তুমি তোমার রবের কাছে পৌঁছানো পর্যন্ত কঠোর পরিশ্রম করতে থাকো। (সুরা ইনশিকাক: ৬)",
+"যদি আল্লাহ তোমাদের সাহায্য করেন, তবে তোমাদের ওপর জয়ী হওয়ার কেউ নেই। (সুরা আল-ইমরান: ১৬০)",
+ "নিশ্চয়ই আল্লাহ তাওবাকারীদের ভালোবাসেন। (সুরা বাকারা: ২২২)",
+"আর তোমাদের রব অত্যন্ত ক্ষমাশীল, দয়ার আধার। (সুরা কাহাফ: ৫৮)",
+"হে প্রশান্ত আত্মা! তুমি তোমার রবের কাছে ফিরে এসো সন্তুষ্ট হয়ে। (সুরা ফাজর: ২৭-২৮)",
+ "তোমরা আমাকে স্মরণ করো, আমিও তোমাদের স্মরণ করব। (সুরা বাকারা: ১৫২)",
+"যে সৎকাজ করবে, আমি তাকে পবিত্র জীবন দান করব। (সুরা নাহল: ৯৭)",
+
             "যে আল্লাহর ওপর ভরসা করে, তার জন্য তিনিই যথেষ্ট। (সুরা তালাক: ৩)"
         ];
 
@@ -136,11 +167,35 @@
             const [loading, setLoading] = useState(true);
             const [newNote, setNewNote] = useState("");
             const [showCalendar, setShowCalendar] = useState(false);
+            const [showFullHistory, setShowFullHistory] = useState(false);
             const [showNoteModal, setShowNoteModal] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             
-            // Dates from State (loaded from DB)
+            // Timer States
+            const [timers, setTimers] = useState([]);
+            const [activeTimer, setActiveTimer] = useState(null);
+            const [timerSeconds, setTimerSeconds] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const timerRef = useRef(null);
+            const audioCtx = useRef(null);
+
+            const playBeep = () => {
+                if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.current.createOscillator();
+                const gain = audioCtx.current.createGain();
+                oscillator.connect(gain);
+                gain.connect(audioCtx.current.destination);
+                oscillator.type = "sine";
+                oscillator.frequency.value = 880;
+                gain.gain.setValueAtTime(0, audioCtx.current.currentTime);
+                gain.gain.linearRampToValueAtTime(1, audioCtx.current.currentTime + 0.01);
+                oscillator.start(audioCtx.current.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.current.currentTime + 1);
+                oscillator.stop(audioCtx.current.currentTime + 1);
+            };
+
+            // Targets
             const [hscTarget, setHscTarget] = useState('2026-06-30');
             const [buetTarget, setBuetTarget] = useState('2026-10-15');
             const [timeLeft, setTimeLeft] = useState({ hsc: { d: 0, h: 0 }, buet: { d: 0, h: 0 } });
@@ -149,11 +204,7 @@
             const [randomAyat] = useState(QURAN_AYATS[Math.floor(Math.random() * QURAN_AYATS.length)]);
 
             const handleGoogleLogin = async () => {
-                try {
-                    await auth.signInWithPopup(googleProvider);
-                } catch (err) {
-                    console.error("Login Error:", err);
-                }
+                try { await auth.signInWithPopup(googleProvider); } catch (err) { console.error("Login Error:", err); }
             };
 
             const handleLogout = () => auth.signOut();
@@ -162,24 +213,25 @@
                 const unsubscribe = auth.onAuthStateChanged((u) => {
                     if (u) {
                         setUser(u);
-                        // Fetch History
                         database.ref(`users/${u.uid}/history`).on('value', (snap) => {
                             const val = snap.val();
                             setHistory(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).sort((a,b) => b.id.localeCompare(a.id)) : []);
                             setLoading(false);
                         });
-                        // Fetch Notes
                         database.ref(`users/${u.uid}/notes`).on('value', (snap) => {
                             const val = snap.val();
                             setNotes(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : []);
                         });
-                        // Fetch Target Dates
                         database.ref(`users/${u.uid}/settings`).on('value', (snap) => {
                             const val = snap.val();
                             if(val) {
                                 if(val.hsc) setHscTarget(val.hsc);
                                 if(val.buet) setBuetTarget(val.buet);
                             }
+                        });
+                        database.ref(`users/${u.uid}/timers`).on('value', (snap) => {
+                            const val = snap.val();
+                            setTimers(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : []);
                         });
                     } else {
                         setUser(null);
@@ -206,12 +258,61 @@
                 return () => clearInterval(timer);
             }, [hscTarget, buetTarget]);
 
+            // Timer Logic
+            useEffect(() => {
+                let interval;
+                if (isTimerRunning && timerSeconds > 0) {
+                    interval = setInterval(() => setTimerSeconds(prev => prev - 1), 1000);
+                } else if (timerSeconds === 0 && isTimerRunning) {
+                    setIsTimerRunning(false);
+                    playBeep();
+                    setTimeout(playBeep, 1200);
+                    alert("সময় শেষ!");
+                    setActiveTimer(null);
+                }
+                return () => clearInterval(interval);
+            }, [isTimerRunning, timerSeconds]);
+
+            const startTimer = (t) => {
+                setActiveTimer(t);
+                setTimerSeconds(t.minutes * 60);
+                setIsTimerRunning(true);
+            };
+
+            const addCustomTimer = () => {
+                const label = prompt("টাইমারের নাম:");
+                const mins = parseInt(prompt("কত মিনিট?"));
+                if (label && mins) {
+                    database.ref(`users/${user.uid}/timers`).push().set({ label, minutes: mins });
+                }
+            };
+
+            const formatTime = (sec) => {
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+
+            // Improved Graph Data Logic from Code 1
+            const last7DaysGraph = useMemo(() => {
+                const days = [];
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const id = d.toISOString().split('T')[0];
+                    const found = history.find(h => h.id === id);
+                    days.push({ 
+                        label: d.toLocaleDateString('bn-BD', {weekday: 'short'}),
+                        date: d.getDate(),
+                        status: found ? found.status : 'none'
+                    });
+                }
+                return days;
+            }, [history]);
+
             const updateSettings = () => {
                 if(!user) return;
-                database.ref(`users/${user.uid}/settings`).set({
-                    hsc: hscTarget,
-                    buet: buetTarget
-                });
+                database.ref(`users/${user.uid}/settings`).set({ hsc: hscTarget, buet: buetTarget });
                 setShowSettings(false);
             };
 
@@ -237,16 +338,12 @@
                 const yesCount = history.filter(h => h.status === 'yes').length;
                 const noCount = history.filter(h => h.status === 'no').length;
                 const net = yesCount - noCount;
-                const step = 3.33;
-                let val = net * step;
-                return Math.max(-95, Math.min(95, val));
+                return Math.max(-95, Math.min(95, net * 3.33));
             }, [history]);
 
             const streak = useMemo(() => {
                 let s = 0;
-                for (let item of history) {
-                    if (item.status === 'yes') s++; else break;
-                }
+                for (let item of history) { if (item.status === 'yes') s++; else break; }
                 return s;
             }, [history]);
 
@@ -266,8 +363,8 @@
             if (!user) return (
                 <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
                     <div className="glass p-10 rounded-[2.5rem] text-center space-y-8 w-full max-w-sm">
-                        <h1 className="text-4xl font-black italic italic uppercase tracking-tighter">BUET<span className="text-blue-500">TRACKER</span></h1>
-                        <p className="text-slate-400 text-sm">ডেটা সিঙ্ক করতে এবং আপনার অগ্রগতি ট্র্যাক করতে গুগল দিয়ে সাইন-ইন করুন।</p>
+                        <h1 className="text-4xl font-black italic uppercase tracking-tighter">BUET<span className="text-blue-500">TRACKER</span></h1>
+                        <p className="text-slate-400 text-sm">ডেটা সিঙ্ক করতে গুগল দিয়ে সাইন-ইন করুন।</p>
                         <button onClick={handleGoogleLogin} className="w-full py-4 bg-white text-black rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-slate-200 transition-all">
                             <Icon name="log-in" size={20} /> Google দিয়ে প্রবেশ করুন
                         </button>
@@ -281,6 +378,7 @@
                         {notes.map((n, i) => <FloatingNote key={n.id} text={n.text} index={i} />)}
                     </div>
 
+                    {/* Top Progress */}
                     <div className="sticky top-4 z-[50] mb-8">
                         <div className="glass rounded-2xl p-4 shadow-2xl border-white/20">
                             <div className="flex justify-between text-[10px] font-black italic mb-2 tracking-widest">
@@ -311,6 +409,7 @@
                         </div>
                     </header>
 
+                    {/* Countdown */}
                     <div className="grid grid-cols-2 gap-3 mb-8">
                         <div className="glass p-4 rounded-2xl text-center border-l-4 border-l-blue-500">
                             <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">HSC 2026</p>
@@ -333,7 +432,7 @@
                                 <div className="py-4 animate-in fade-in zoom-in duration-500 space-y-6">
                                     <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-xl font-black ${todayStatus === 'yes' ? 'bg-green-600' : 'bg-red-600'}`}>
                                         <Icon name={todayStatus === 'yes' ? 'check-circle' : 'x-circle'} />
-                                        {todayStatus === 'yes' ? 'হ্যাঁ, দিয়েছি!' : 'না,আমি অলস ।'}
+                                        {todayStatus === 'yes' ? 'হ্যাঁ, দিয়েছি!' : 'না, আমি অলস।'}
                                     </div>
                                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-4 italic text-blue-400 text-sm md:text-base">"{randomAyat}"</div>
                                 </div>
@@ -346,6 +445,25 @@
                         </div>
                     </main>
 
+                    {/* Integrated Graph System from Code 1 */}
+                    <div className="glass p-6 rounded-3xl mb-8">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2">
+                            <Icon name="bar-chart-3" size={12} /> Last 7 Days Performance
+                        </h3>
+                        <div className="flex justify-between items-end h-24 px-2">
+                            {last7DaysGraph.map((day, i) => (
+                                <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                                    <div className={`w-full max-w-[10px] rounded-full graph-bar ${
+                                        day.status === 'yes' ? 'bg-blue-500 h-20 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 
+                                        day.status === 'no' ? 'bg-red-500 h-10 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'bg-slate-800 h-2'
+                                    }`} />
+                                    <span className="text-[8px] font-bold text-slate-500 uppercase">{day.label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
                     <div className="grid grid-cols-4 gap-2 mb-8">
                         {[
                             { label: 'Streak', val: streak, icon: 'flame', color: 'text-orange-500' },
@@ -361,14 +479,46 @@
                         ))}
                     </div>
 
-                    {/* History Section */}
+                    {/* Timer Section */}
+                    <div className="glass p-6 rounded-3xl mb-8">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2"><Icon name="timer" size={12} /> Focus Timer</h3>
+                            <button onClick={addCustomTimer} className="text-blue-500"><Icon name="plus-circle" size={18} /></button>
+                        </div>
+                        
+                        {activeTimer && (
+                            <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl p-6 mb-4 text-center">
+                                <p className="text-xs font-bold text-blue-400 uppercase mb-1">{activeTimer.label}</p>
+                                <p className="text-5xl font-mono font-black mb-4">{formatTime(timerSeconds)}</p>
+                                <div className="flex justify-center gap-3">
+                                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="bg-blue-600 px-6 py-2 rounded-xl font-bold">
+                                        {isTimerRunning ? 'Pause' : 'Resume'}
+                                    </button>
+                                    <button onClick={() => {setIsTimerRunning(false); setTimerSeconds(0); setActiveTimer(null);}} className="bg-slate-800 px-6 py-2 rounded-xl font-bold">Stop</button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                            {timers.map(t => (
+                                <button key={t.id} onClick={() => startTimer(t)} className="glass px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold hover:border-blue-500 transition-all">
+                                    {t.label} ({t.minutes}m)
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* History Log */}
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 flex items-center gap-2"><Icon name="history" size={12} /> Recent History</h3>
-                        <div className="glass rounded-2xl divide-y divide-slate-800/50 max-h-60 overflow-y-auto">
+                        <div className="flex justify-between items-center px-2">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2"><Icon name="history" size={12} /> Recent History</h3>
+                            <button onClick={() => setShowFullHistory(true)} className="text-[10px] font-bold text-blue-500 uppercase">View All</button>
+                        </div>
+                        <div className="glass rounded-2xl divide-y divide-slate-800/50 max-h-60 overflow-y-auto pr-1">
                             {history.length === 0 ? <p className="p-10 text-center text-slate-600 italic text-sm">কোনো রেকর্ড নেই</p> : history.slice(0, 7).map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'yes' ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'yes' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`} />
                                         <div>
                                             <p className="text-xs font-bold">{item.id.split('-').reverse().join('/')}</p>
                                             <p className="text-[9px] text-slate-500 uppercase">{new Date(item.id).toLocaleDateString('bn-BD', { weekday: 'long' })}</p>
@@ -380,7 +530,35 @@
                         </div>
                     </div>
 
-                    {/* Settings Modal (Add Dates) */}
+                    {/* Full History Modal */}
+                    {showFullHistory && (
+                        <div className="fixed inset-0 z-[101] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4">
+                            <div className="glass w-full max-w-md rounded-[2.5rem] p-8 space-y-6 max-h-[80vh] overflow-y-auto">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-black italic text-blue-400 uppercase">Full History</h3>
+                                    <button onClick={() => setShowFullHistory(false)} className="text-slate-400"><Icon name="x" /></button>
+                                </div>
+                                <div className="grid grid-cols-7 gap-2 pb-6 border-b border-white/5">
+                                    {history.map(item => (
+                                        <div key={item.id} title={item.id} className="flex flex-col items-center gap-1">
+                                            <div className={`calendar-dot ${item.status === 'yes' ? 'bg-green-500' : 'bg-red-500'}`} />
+                                            <span className="text-[7px] text-slate-500">{item.id.split('-')[2]}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="space-y-2">
+                                    {history.map(item => (
+                                        <div key={item.id} className="flex justify-between text-[11px] text-slate-400 bg-white/5 p-2 rounded-lg">
+                                            <span className="font-mono">{item.id}</span>
+                                            <span className={item.status === 'yes' ? 'text-green-500' : 'text-red-500'}>{item.status === 'yes' ? 'SUCCESS' : 'FAILED'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modals */}
                     {showSettings && (
                         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
                             <div className="glass w-full max-w-sm rounded-[2rem] p-6 space-y-6">
@@ -397,27 +575,26 @@
                                         <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">BUET Admission Date</label>
                                         <input type="date" value={buetTarget} onChange={e => setBuetTarget(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white outline-none focus:border-blue-500" />
                                     </div>
-                                    <button onClick={updateSettings} className="w-full py-4 bg-blue-600 rounded-xl font-black hover:bg-blue-500 transition-colors">Save Changes</button>
+                                    <button onClick={updateSettings} className="w-full py-4 bg-blue-600 rounded-xl font-black">Save Changes</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Note & Calendar Modals (Existing) */}
                     {showNoteModal && (
                         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
                             <div className="glass w-full max-w-lg rounded-t-[2rem] md:rounded-[2rem] p-6 space-y-6 max-h-[90vh] flex flex-col">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-xl font-black italic text-blue-400">ভাসমান নোট সেট করুন</h3>
+                                    <h3 className="text-xl font-black italic text-blue-400">ভাসমান নোট</h3>
                                     <button onClick={() => setShowNoteModal(false)} className="p-2 text-slate-400"><Icon name="x" /></button>
                                 </div>
                                 <div className="flex gap-2">
-                                    <input type="text" value={newNote} onChange={e => setNewNote(e.target.value)} onKeyPress={e => e.key === 'Enter' && addNote()} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none" placeholder="পড়ার লক্ষ্য..." />
+                                    <input type="text" value={newNote} onChange={e => setNewNote(e.target.value)} onKeyPress={e => e.key === 'Enter' && addNote()} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm outline-none" placeholder="পড়ার লক্ষ্য..." />
                                     <button onClick={addNote} className="bg-blue-600 p-3 rounded-xl"><Icon name="plus" /></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-2">
                                     {notes.map(n => (
-                                        <div key={n.id} className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                        <div key={n.id} className="bg-white/5 p-3 rounded-xl flex justify-between items-center border border-white/5">
                                             <p className="text-sm text-slate-300">* {n.text}</p>
                                             <button onClick={() => database.ref(`users/${user.uid}/notes/${n.id}`).remove()} className="text-slate-600 hover:text-red-500"><Icon name="trash-2" size={14}/></button>
                                         </div>
@@ -435,7 +612,7 @@
                                     <button onClick={() => setShowCalendar(false)} className="text-slate-400"><Icon name="x" /></button>
                                 </div>
                                 <div className="space-y-4">
-                                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-center outline-none focus:border-blue-500" />
+                                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-center outline-none" />
                                     <div className="grid grid-cols-2 gap-3">
                                         <button onClick={() => {handleChoice('yes', selectedDate); setShowCalendar(false);}} className="py-4 bg-green-600 rounded-xl font-black">হ্যাঁ</button>
                                         <button onClick={() => {handleChoice('no', selectedDate); setShowCalendar(false);}} className="py-4 bg-red-600 rounded-xl font-black">না</button>
@@ -446,7 +623,7 @@
                     )}
 
                     <footer className="text-center py-10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
-                        বুয়েট অথবা কিছুই না - পড় নাইলে মর
+                        বুয়েট অথবা কিছুই না - পড় নাইলে মর
                     </footer>
                 </div>
             );
