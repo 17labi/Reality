@@ -187,7 +187,7 @@
                     element.style.visibility = 'visible';
 
                     // ৫. র্যান্ডম স্পিড
-                    const duration = Math.floor(Math.random() * 10000) + 20000; // ২০-৩০ সেকেন্ড
+                    const duration = Math.floor(Math.random() * 40000) + 60000; // ২০-৩০ সেকেন্ড
 
                     const animation = element.animate([
                         { transform: 'translateX(120vw)' }, // স্ক্রিনের অনেক বাইরে থেকে শুরু
@@ -216,7 +216,7 @@
                 element.style.visibility = 'hidden';
                 
                 // প্রথমবার একেকটি নোট একেক সময় ট্রাই করা শুরু করবে যাতে শুরুতে ধাক্কা না লাগে
-                const initialStartTimeout = setTimeout(startFloating, index * 1500);
+                const initialStartTimeout = setTimeout(startFloating, index * 3000);
 
                 return () => {
                     clearTimeout(initialStartTimeout);
