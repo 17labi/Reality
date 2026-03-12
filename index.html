@@ -104,6 +104,7 @@
         };
 
         const MOTIVATIONAL_QUOTES = [
+            "Consistency is more important than Intensity অর্থাৎ, একদিন ১৮ ঘণ্টা পড়ার চেয়ে প্রতিদিন নিয়ম করে ১০ ঘণ্টা পড়াই হলো বুয়েট বা জীবনের যেকোনো বড় অর্জনের আসল চাবিকাঠি",
             "বুয়েট ক্যাম্পাস তোমার অপেক্ষায়।",
             "কষ্ট আজ করলে, মিষ্টি কাল হবে।",
             "নিয়মিত পরিশ্রম মেধার চেয়েও বেশি শক্তিশালী।",
@@ -241,6 +242,14 @@
 
         function App() {
             const [user, setUser] = useState(null);
+            const [showMeaning, setShowMeaning] = useState(false);
+
+useEffect(() => {
+    const interval = setInterval(() => {
+        setShowMeaning(prev => !prev);
+    }, 5000); // 5 সেকেন্ড পর পর নাম এবং অর্থ পরিবর্তন হবে
+    return () => clearInterval(interval);
+}, []);
             const [history, setHistory] = useState([]);
             const [notes, setNotes] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -524,7 +533,23 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                            <button onClick={() => setShowSettings(true)} className="p-2 glass rounded-full text-slate-400"><Icon name="settings" size={18} /></button>
                            <button onClick={handleLogout} className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Logout</button>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">এটাই<span className="text-blue-500"> বাস্তবতা</span></h1>
+                        <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">এটাই <span className="text-blue-500">  বাস্তবতা</span></h1>
+                        <div className="mb-2 h-8 flex items-center justify-center overflow-hidden">
+    <div className={`transition-all duration-1000 transform ${showMeaning ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
+        {!showMeaning && (
+            <h2 className="text-lg font-bold text-blue-400 tracking-widest uppercase">
+                MD Faizur Rahman Labib
+            </h2>
+        )}
+    </div>
+    <div className={`absolute transition-all duration-1000 transform ${showMeaning ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+        {showMeaning && (
+            <h2 className="text-lg font-medium text-slate-300 italic">
+                "পরম দয়ালু আল্লাহর অনুগ্রহপ্রাপ্ত প্রখর মেধার অধিকারী ও অত্যন্ত বুদ্ধিমান ব্যক্তি যিনি সুদূরপ্রসারী চিন্তার অধিকারী"
+            </h2>
+        )}
+    </div>
+</div>
                         <div className="glass px-4 py-2 rounded-xl inline-flex items-center gap-2 max-w-[90%] mx-auto">
                             <Icon name="quote" size={14} className="text-blue-500 shrink-0" />
                             <p className="text-slate-400 italic text-xs md:text-sm truncate">{quote}</p>
