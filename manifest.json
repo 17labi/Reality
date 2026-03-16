@@ -1,21 +1,60 @@
 {
-  "name": "Unified Tracker PRO",
-  "short_name": "SyncPro",
-  "start_url": "tracker.html",
+  "name": "Unified Tracker - Spaced Repetition & Reality Tracking",
+  "short_name": "Unified Tracker",
+  "description": "Scientific spaced repetition and reality tracking app for BUET students",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
+  "background_color": "#0f172a",
   "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "lifestyle"],
+  "lang": "bn",
   "icons": [
     {
-      "src": "https://i.imgur.com/vHq05YF.png",
-      "sizes": "512x512",
+      "src": "https://i.imgur.com/uSp07zn.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "https://i.imgur.com/vHq05YF.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "https://i.imgur.com/uSp07zn.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://i.imgur.com/uSp07zn.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Topic",
+      "short_name": "Add",
+      "description": "Add new spaced repetition topic",
+      "url": "/?action=add",
+      "icons": [
+        {
+          "src": "https://i.imgur.com/uSp07zn.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Review Due",
+      "short_name": "Review",
+      "description": "View topics due for review",
+      "url": "/?action=review",
+      "icons": [
+        {
+          "src": "https://i.imgur.com/uSp07zn.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ]
 }
