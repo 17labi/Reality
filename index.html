@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Unified Tracker - Spaced Repetition & Reality Tracking</title>
@@ -354,6 +357,19 @@
     
     const auth = firebase.auth();
     const database = firebase.database();
+    database.ref().keepSynced(true);
+
+
+// অফলাইন ডেটা পারসিস্টেন্স
+
+firebase.database().goOnline();
+
+// সার্ভিস ওয়ার্কার রেজিস্ট্রেশন
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+    });
+}
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     function updateUserProfile() {
@@ -1629,7 +1645,15 @@ function handleReview(id) {
             const root = ReactDOM.createRoot(document.getElementById('root'));
             root.render(<App />);
         });
-    </script>
+        
+        
+      if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registered!', reg))
+            .catch(err => console.log('SW failed', err));
+    });
+}
+</script>
 </body>
 </html>
-
