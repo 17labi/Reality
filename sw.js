@@ -174,15 +174,15 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: 'https://i.imgur.com/uSp07zn.png',
-      badge: 'https://i.imgur.com/uSp07zn.png',
+      icon: 'https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png',
+      badge: 'https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png',
       vibrate: [200, 100, 200],
       data: data.data || {},
       actions: [
         {
           action: 'open',
           title: 'Open App',
-          icon: 'https://i.imgur.com/uSp07zn.png'
+          icon: 'https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png'
         },
         {
           action: 'close',
