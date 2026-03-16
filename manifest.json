@@ -1,0 +1,21 @@
+{
+  "name": "Unified Tracker PRO",
+  "short_name": "SyncPro",
+  "start_url": "tracker.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/vHq05YF.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.imgur.com/vHq05YF.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
