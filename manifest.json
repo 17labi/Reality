@@ -11,13 +11,13 @@
   "lang": "bn",
   "icons": [
     {
-      "src": "https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png",
+      "src": "https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png",
+      "src": "https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -25,7 +25,7 @@
   ],
   "screenshots": [
     {
-      "src": "https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png",
+      "src": "https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
@@ -39,7 +39,7 @@
       "url": "/?action=add",
       "icons": [
         {
-          "src": "https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png",
+          "src": "https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png",
           "sizes": "96x96"
         }
       ]
@@ -51,7 +51,7 @@
       "url": "/?action=review",
       "icons": [
         {
-          "src": "https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png",
+          "src": "https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png",
           "sizes": "96x96"
         }
       ]
