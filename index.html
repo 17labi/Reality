@@ -40,16 +40,29 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Global Tab Navigation Styles */
+        /* Enhanced Global Tab Navigation with Glassmorphism - Task 2.3 */
         .global-tab-nav {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            background: rgba(30, 41, 59, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 2px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Browser Fallback for Global Navigation */
+        @supports not (backdrop-filter: blur(16px)) {
+            .global-tab-nav {
+                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
         }
         
         .global-tab-container {
@@ -62,6 +75,7 @@
             justify-content: center;
         }
         
+        /* Enhanced Global Tab Buttons with Glassmorphism - Task 2.3 */
         .global-tab-btn {
             padding: 0.75rem 2rem;
             border-radius: 1rem;
@@ -77,19 +91,30 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         
         .global-tab-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.9);
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
         .global-tab-btn.active {
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
             border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+            box-shadow: 
+                0 8px 24px rgba(99, 102, 241, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
         
         .module-container {
@@ -108,25 +133,67 @@
             color: #0f172a;
             letter-spacing: -0.01em;
             min-height: 100vh;
+            position: relative;
+        }
+        
+        .sr-module::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
+            animation: bgShift 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
         }
         
         .sr-module .font-bn { font-family: 'Hind Siliguri', sans-serif; }
         .sr-module .font-mono { font-family: 'JetBrains Mono', monospace; }
         
+        .sr-module > * {
+            position: relative;
+            z-index: 1;
+        }
+        
         .sr-module .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .sr-module .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .sr-module .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         
+        /* Enhanced Glassmorphism Card System - Task 2.1 */
         .sr-module .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .sr-module .glass-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Browser Fallback for Unsupported backdrop-filter - Task 2.2 */
+        @supports not (backdrop-filter: blur(16px)) {
+            .sr-module .glass-card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+        }
+        
+        /* Safari-specific fallback */
+        @supports not (-webkit-backdrop-filter: blur(16px)) {
+            .sr-module .glass-card {
+                background: rgba(255, 255, 255, 0.95);
+            }
         }
         
         @keyframes pulse-border {
@@ -148,8 +215,66 @@
         .sr-module .progress-bar-bg { background: #f1f5f9; border-radius: 999px; height: 6px; overflow: hidden; }
         .sr-module .progress-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        .sr-module .sidebar-item { transition: all 0.3s ease; }
-        .sr-module .sidebar-item:hover:not(.tab-active) { background: rgba(255, 255, 255, 0.05); }
+        /* Enhanced Sidebar Items with Glassmorphism - Task 2.3 */
+        .sr-module .sidebar-item { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sr-module .sidebar-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .sr-module .sidebar-item:hover::before {
+            opacity: 1;
+        }
+        
+        .sr-module .sidebar-item:hover:not(.tab-active) { 
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transform: translateX(4px);
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Enhanced Modal Dialog with Glassmorphism - Task 2.3 */
+        .sr-module #modal {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        
+        .sr-module #modal > div {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Browser Fallback for Modal */
+        @supports not (backdrop-filter: blur(16px)) {
+            .sr-module #modal {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            
+            .sr-module #modal > div {
+                background: rgba(255, 255, 255, 1) !important;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+        }
         
         .sr-module .log-entry-added { border-left: 5px solid #0ea5e9; }
         .sr-module .log-entry-revised { border-left: 5px solid #84cc16; }
@@ -172,6 +297,19 @@
             color: #f8fafc;
             font-family: 'Hind Siliguri', sans-serif;
             min-height: 100vh;
+            position: relative;
+        }
+        
+        .rt-module::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            animation: bgShift 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
         }
         
         @keyframes float-rtl {
@@ -183,11 +321,33 @@
             animation: float-rtl linear infinite;
         }
         
+        /* Enhanced Glassmorphism for Reality Tracking Module - Task 2.3 */
         .rt-module .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .rt-module .glass:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Browser Fallback for Reality Tracking - Task 2.2 */
+        @supports not (backdrop-filter: blur(16px)) {
+            .rt-module .glass {
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
         }
         
         .rt-module .neo-button {
@@ -219,11 +379,634 @@
             height: 8px;
             border-radius: 50%;
         }
+        
+        /* ===== TASK 3: NEUMORPHIC BUTTON SYSTEM ===== */
+        
+        /* Task 3.1: Neumorphic Button Base Styles */
+        .neu-button {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 16px;
+            box-shadow: 
+                8px 8px 16px rgba(0, 0, 0, 0.4),
+                -8px -8px 16px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .neu-button:hover {
+            box-shadow: 
+                12px 12px 24px rgba(0, 0, 0, 0.5),
+                -12px -12px 24px rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .neu-button:active {
+            box-shadow: 
+                inset 4px 4px 8px rgba(0, 0, 0, 0.5),
+                inset -4px -4px 8px rgba(255, 255, 255, 0.05);
+            transform: scale(0.98);
+        }
+        
+        /* Task 3.2: Button Variants and Sizes */
+        .neu-button-primary {
+            background: linear-gradient(145deg, #6366f1, #4f46e5);
+            box-shadow: 
+                8px 8px 16px rgba(79, 70, 229, 0.3),
+                -8px -8px 16px rgba(99, 102, 241, 0.1);
+        }
+        
+        .neu-button-primary:hover {
+            box-shadow: 
+                12px 12px 24px rgba(79, 70, 229, 0.4),
+                -12px -12px 24px rgba(99, 102, 241, 0.15);
+        }
+        
+        .neu-button-secondary {
+            background: linear-gradient(145deg, #64748b, #475569);
+            box-shadow: 
+                8px 8px 16px rgba(71, 85, 105, 0.3),
+                -8px -8px 16px rgba(100, 116, 139, 0.1);
+        }
+        
+        .neu-button-danger {
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            box-shadow: 
+                8px 8px 16px rgba(220, 38, 38, 0.3),
+                -8px -8px 16px rgba(239, 68, 68, 0.1);
+        }
+        
+        .neu-button-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            border-radius: 12px;
+        }
+        
+        .neu-button-medium {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            border-radius: 14px;
+        }
+        
+        .neu-button-large {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            border-radius: 18px;
+        }
+        
+        .neu-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: 
+                4px 4px 8px rgba(0, 0, 0, 0.2),
+                -4px -4px 8px rgba(255, 255, 255, 0.02);
+        }
+        
+        .neu-button:disabled:hover {
+            transform: none;
+        }
+        
+        /* Focus indicators for accessibility - Task 3.2 */
+        .neu-button:focus {
+            outline: none;
+            box-shadow: 
+                8px 8px 16px rgba(0, 0, 0, 0.4),
+                -8px -8px 16px rgba(255, 255, 255, 0.05),
+                0 0 0 3px rgba(99, 102, 241, 0.5);
+        }
+        
+        .neu-button:focus-visible {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+        }
+        
+        /* ===== TASK 5: ADVANCED GRADIENT SYSTEM ===== */
+        
+        /* Task 5.1: Animated Gradient Backgrounds */
+        .gradient-primary {
+            background: linear-gradient(
+                135deg,
+                hsl(239, 84%, 67%) 0%,
+                hsl(280, 84%, 67%) 50%,
+                hsl(320, 84%, 67%) 100%
+            );
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .gradient-secondary {
+            background: linear-gradient(
+                135deg,
+                hsl(200, 84%, 67%) 0%,
+                hsl(240, 84%, 67%) 50%,
+                hsl(280, 84%, 67%) 100%
+            );
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        .gradient-accent {
+            background: linear-gradient(
+                135deg,
+                hsl(320, 84%, 67%) 0%,
+                hsl(360, 84%, 67%) 50%,
+                hsl(40, 84%, 67%) 100%
+            );
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        /* Task 5.2: Interactive Gradient Overlays */
+        .gradient-overlay {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gradient-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(99, 102, 241, 0.3) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .gradient-overlay:hover::before {
+            opacity: 1;
+        }
+        
+        .gradient-overlay > * {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* ===== TASK 6: PARTICLE EFFECT SYSTEM ===== */
+        
+        /* Task 6.1: Particle Container and Base Styles */
+        .particle-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.8), transparent);
+            border-radius: 50%;
+            animation: float var(--duration, 20s) linear infinite;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(var(--drift, 50px)) scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* Respect reduced motion preference - Task 6.3 */
+        @media (prefers-reduced-motion: reduce) {
+            .particle {
+                animation: none;
+                display: none;
+            }
+        }
+        
+        /* ===== TASK 8: 3D TRANSFORM SYSTEM ===== */
+        
+        /* Task 8.1: 3D Transform Base Styles */
+        .transform-3d-container {
+            perspective: 1000px;
+            perspective-origin: center;
+        }
+        
+        .transform-3d-card {
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .transform-3d-card:hover {
+            transform: 
+                rotateX(var(--rotate-x, 0deg))
+                rotateY(var(--rotate-y, 0deg))
+                translateZ(20px);
+        }
+        
+        /* Shine effect - Task 8.1 */
+        .transform-3d-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 50%
+            );
+            border-radius: inherit;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .transform-3d-card:hover::after {
+            opacity: 1;
+        }
+        
+        /* Disable 3D on mobile for performance */
+        @media (max-width: 768px) {
+            .transform-3d-card {
+                transform-style: flat;
+            }
+            
+            .transform-3d-card:hover {
+                transform: translateY(-4px) scale(1.02);
+            }
+        }
+        
+        /* ===== TASK 9: MICRO-INTERACTION SYSTEM ===== */
+        
+        /* Task 9.1: Ripple Effect Animation */
+        .micro-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .micro-ripple::after {
+            content: '';
+            position: absolute;
+            top: var(--ripple-y, 50%);
+            left: var(--ripple-x, 50%);
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            animation: ripple 600ms ease-out;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            to {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+            }
+        }
+        
+        /* Task 9.2: Bounce and Shake Animations */
+        .micro-bounce {
+            animation: bounce 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .micro-shake {
+            animation: shake 400ms ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        
+        .micro-glow {
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            }
+            to {
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6);
+            }
+        }
+        
+        /* Pulse animation for notifications */
+        .micro-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        /* ===== TASK 11: RESPONSIVE LAYOUT SYSTEM ===== */
+        
+        /* Task 11.1: Responsive Grid System */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            gap: clamp(1rem, 3vw, 2rem);
+            padding: clamp(1rem, 4vw, 3rem);
+        }
+        
+        .responsive-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .responsive-stack {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        /* Task 11.2: Fluid Typography */
+        .fluid-text-xs {
+            font-size: clamp(0.75rem, 1vw + 0.5rem, 0.875rem);
+            line-height: 1.5;
+        }
+        
+        .fluid-text-sm {
+            font-size: clamp(0.875rem, 1.5vw + 0.5rem, 1rem);
+            line-height: 1.5;
+        }
+        
+        .fluid-text-base {
+            font-size: clamp(1rem, 2vw + 0.5rem, 1.125rem);
+            line-height: 1.5;
+        }
+        
+        .fluid-text-lg {
+            font-size: clamp(1.125rem, 2.5vw + 0.5rem, 1.5rem);
+            line-height: 1.4;
+        }
+        
+        .fluid-text-xl {
+            font-size: clamp(1.25rem, 3vw + 0.5rem, 1.875rem);
+            line-height: 1.3;
+        }
+        
+        .fluid-text-2xl {
+            font-size: clamp(1.5rem, 4vw + 0.5rem, 2.25rem);
+            line-height: 1.2;
+        }
+        
+        .fluid-text-3xl {
+            font-size: clamp(1.875rem, 5vw + 0.5rem, 3rem);
+            line-height: 1.1;
+        }
+        
+        /* Responsive spacing utilities */
+        .fluid-spacing-sm {
+            padding: clamp(0.5rem, 2vw, 1rem);
+        }
+        
+        .fluid-spacing-md {
+            padding: clamp(1rem, 3vw, 2rem);
+        }
+        
+        .fluid-spacing-lg {
+            padding: clamp(1.5rem, 4vw, 3rem);
+        }
+        
+        /* Ensure minimum touch target sizes - Task 11.4 */
+        @media (max-width: 768px) {
+            button, a, input[type="button"], input[type="submit"] {
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+        
+        /* ===== TASK 16: PERFORMANCE OPTIMIZATIONS ===== */
+        
+        /* Task 16.1: GPU Acceleration */
+        .will-change-transform {
+            will-change: transform;
+        }
+        
+        .will-change-opacity {
+            will-change: opacity;
+        }
+        
+        /* Remove will-change after animations */
+        .animation-complete {
+            will-change: auto;
+        }
+        
+        /* Task 16.4: Optimize glassmorphism */
+        .glass-card, .glass {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        /* ===== TASK 17: ACCESSIBILITY ENHANCEMENTS ===== */
+        
+        /* Task 17.1: High Contrast Mode Support */
+        @media (prefers-contrast: high) {
+            .glass-card, .glass {
+                background: rgba(255, 255, 255, 0.95);
+                border: 2px solid currentColor;
+            }
+            
+            .neu-button {
+                border: 2px solid currentColor;
+            }
+        }
+        
+        /* Task 17.2: Reduced Motion Support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .gradient-primary, .gradient-secondary, .gradient-accent {
+                animation: none;
+            }
+            
+            .transform-3d-card:hover {
+                transform: none;
+            }
+        }
+        
+        /* Task 17.3: Enhanced Focus Indicators */
+        *:focus-visible {
+            outline: 3px solid #6366f1;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+        
+        button:focus-visible, a:focus-visible {
+            outline: 3px solid #6366f1;
+            outline-offset: 2px;
+        }
+        
+        /* Skip to content link for screen readers */
+        .skip-to-content {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #6366f1;
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 10000;
+        }
+        
+        .skip-to-content:focus {
+            top: 0;
+        }
+        
+        /* ===== TASK 18: THEME SWITCHING SUPPORT ===== */
+        
+        /* Light theme variables */
+        [data-theme="light"] {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --neu-light: rgba(255, 255, 255, 0.8);
+            --neu-dark: rgba(0, 0, 0, 0.15);
+        }
+        
+        [data-theme="light"] .sr-module {
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        [data-theme="light"] .rt-module {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        
+        [data-theme="light"] .glass-card,
+        [data-theme="light"] .glass {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="light"] .neu-button {
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            box-shadow: 
+                8px 8px 16px rgba(0, 0, 0, 0.1),
+                -8px -8px 16px rgba(255, 255, 255, 0.9);
+        }
+        
+        [data-theme="light"] .particle {
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.4), transparent);
+        }
+        
+        /* ===== ADDITIONAL VISUAL ENHANCEMENTS ===== */
+        
+        /* Animated background pattern */
+        .animated-bg {
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            animation: bgShift 15s ease infinite;
+        }
+        
+        @keyframes bgShift {
+            0%, 100% { background-position: 0% 0%, 100% 100%; }
+            50% { background-position: 100% 100%, 0% 0%; }
+        }
+        
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+        
+        /* Loading skeleton animation */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Floating animation for special elements */
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float-gentle {
+            animation: float-gentle 3s ease-in-out infinite;
+        }
+        
+        /* Glow effect for important elements */
+        .glow-primary {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+        
+        .glow-success {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+        
+        .glow-danger {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
     </style>
 </head>
 <body>
     <!-- Global Tab Navigation -->
-    <div class="global-tab-nav">
+    <div class="global-tab-nav gradient-primary">
         <div class="global-tab-container">
             <button id="tab-sr" class="global-tab-btn active" onclick="switchGlobalTab('sr')">
                 <span>📚</span>
@@ -238,11 +1021,14 @@
 
     <!-- Spaced Repetition Module -->
     <div id="sr-module" class="module-container sr-module active">
+        <!-- Particle Container for SR Module - Task 6.4 -->
+        <div class="particle-container" id="sr-particles"></div>
+        
         <div id="sr-app" class="flex flex-col md:flex-row h-screen overflow-hidden">
             <!-- Smart Sidebar -->
             <aside class="order-2 md:order-1 fixed bottom-0 left-0 right-0 md:relative md:w-24 lg:w-72 bg-[#020617] text-white flex md:flex-col z-50 p-2 md:p-6 shrink-0 font-bn">
                 <div class="hidden md:flex items-center gap-4 mb-12 px-2">
-                    <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 float-gentle">
                         <i data-lucide="zap" class="w-7 h-7 text-white"></i>
                     </div>
                     <div class="hidden lg:block">
@@ -284,10 +1070,14 @@
                     <div class="flex-1 max-w-xl relative group">
                         <i data-lucide="search" class="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 group-focus-within:text-indigo-500 transition-colors"></i>
                         <input id="search-input" type="text" placeholder="পড়া বা ইতিহাস খুঁজুন..." oninput="render()" 
-                               class="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 bg-slate-100/50 border border-transparent focus:border-indigo-500/30 focus:bg-white rounded-xl md:rounded-2xl text-sm outline-none font-bn transition-all shadow-sm">
+                               class="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 bg-slate-100/50 border border-transparent focus:border-indigo-500/30 focus:bg-white rounded-xl md:rounded-2xl text-sm outline-none font-bn transition-all shadow-sm hover:bg-white hover:shadow-md">
                     </div>
                     
                   <div class="flex items-center gap-2 md:gap-4 ml-3 md:ml-6">
+    <!-- Theme Toggle Button - Task 18.3 -->
+    <button id="theme-toggle-btn" onclick="toggleTheme()" class="neu-button neu-button-small p-2.5 md:p-3 rounded-xl transition-all" title="Toggle Theme">
+        <i data-lucide="sun" class="w-5 h-5"></i>
+    </button>
     <div id="user-profile-container"></div>
     <div class="hidden sm:flex flex-col items-end">
         <span id="live-clock" class="text-sm md:text-lg font-mono font-black text-slate-800 leading-none tracking-tighter">00:00:00</span>
@@ -299,7 +1089,7 @@
             <span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="connection-status">System Pulse</span>
         </div>
     </div>
-    <button onclick="toggleModal(true)" class="group bg-slate-900 hover:bg-indigo-600 text-white p-2.5 md:p-3.5 rounded-xl md:rounded-2xl shadow-xl transition-all duration-300 active:scale-90">
+    <button onclick="toggleModal(true)" class="neu-button neu-button-primary group p-2.5 md:p-3.5 rounded-xl md:rounded-2xl shadow-xl transition-all duration-300">
         <i data-lucide="plus" class="w-5 h-5 md:w-6 md:h-6 group-hover:rotate-90 transition-transform"></i>
     </button>
 </div>
@@ -329,7 +1119,7 @@
                             <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">পড়ার তারিখ</label>
                             <input id="modal-date" type="date" class="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-3xl outline-none font-mono focus:ring-4 ring-indigo-50 transition-all">
                         </div>
-                        <button onclick="addTopicManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 md:py-5 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-indigo-200 transition-all active:scale-95">ডেটা সিঙ্ক করুন</button>
+                        <button onclick="addTopicManual()" class="neu-button neu-button-primary w-full py-4 md:py-5 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-xl transition-all">ডেটা সিঙ্ক করুন</button>
                     </div>
                 </div>
             </div>
@@ -338,6 +1128,9 @@
 
     <!-- Reality Tracking Module -->
     <div id="rt-module" class="module-container rt-module">
+        <!-- Particle Container for RT Module - Task 6.4 -->
+        <div class="particle-container" id="rt-particles"></div>
+        
         <div id="root"></div>
     </div>
 
@@ -591,6 +1384,264 @@
     }
 }
 
+        // ===== TASK 6.2 & 6.3: PARTICLE GENERATION SYSTEM =====
+        let particleAnimationFrameId = null;
+        let lastFrameTime = performance.now();
+        let fps = 60;
+        
+        function generateParticles(container, count) {
+            if (!container) return [];
+            
+            // Respect reduced motion preference
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                return [];
+            }
+            
+            // Limit particle count based on device
+            const isMobile = window.innerWidth < 768;
+            const maxCount = isMobile ? 50 : 100;
+            const actualCount = Math.min(count, maxCount);
+            
+            const particles = [];
+            
+            for (let i = 0; i < actualCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Randomize particle properties
+                const size = 2 + Math.random() * 4; // 2-6px
+                const duration = 15 + Math.random() * 15; // 15-30s
+                const delay = Math.random() * 10; // 0-10s
+                const drift = -100 + Math.random() * 200; // -100 to 100px
+                const startX = Math.random() * container.offsetWidth;
+                
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = startX + 'px';
+                particle.style.setProperty('--duration', duration + 's');
+                particle.style.setProperty('--drift', drift + 'px');
+                particle.style.animationDelay = delay + 's';
+                
+                container.appendChild(particle);
+                particles.push(particle);
+            }
+            
+            return particles;
+        }
+        
+        // Performance monitoring for particles
+        function monitorParticlePerformance() {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+            
+            fps = 1000 / deltaTime;
+            
+            // If FPS drops below 30, reduce particles
+            if (fps < 30) {
+                const containers = document.querySelectorAll('.particle-container');
+                containers.forEach(container => {
+                    const particles = container.querySelectorAll('.particle');
+                    const removeCount = Math.floor(particles.length * 0.25);
+                    for (let i = 0; i < removeCount; i++) {
+                        if (particles[i]) particles[i].remove();
+                    }
+                });
+            }
+            
+            particleAnimationFrameId = requestAnimationFrame(monitorParticlePerformance);
+        }
+        
+        // Pause particles when tab is inactive
+        document.addEventListener('visibilitychange', () => {
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => {
+                if (document.hidden) {
+                    particle.style.animationPlayState = 'paused';
+                } else {
+                    particle.style.animationPlayState = 'running';
+                }
+            });
+        });
+        
+        // ===== TASK 8.2 & 8.3: 3D TRANSFORM CALCULATION =====
+        function calculate3DTransform(element, mouseX, mouseY) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + (rect.width / 2);
+            const centerY = rect.top + (rect.height / 2);
+            
+            // Calculate relative position (-1 to 1)
+            let relativeX = (mouseX - centerX) / (rect.width / 2);
+            let relativeY = (mouseY - centerY) / (rect.height / 2);
+            
+            // Clamp values
+            relativeX = Math.max(-1, Math.min(1, relativeX));
+            relativeY = Math.max(-1, Math.min(1, relativeY));
+            
+            // Calculate rotation angles (max 15 degrees)
+            const rotateY = relativeX * 15;
+            const rotateX = relativeY * -15;
+            
+            return {
+                rotateX: rotateX,
+                rotateY: rotateY,
+                transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(20px)`
+            };
+        }
+        
+        // Setup 3D transform on elements
+        function setup3DTransforms() {
+            const cards3D = document.querySelectorAll('.transform-3d-card');
+            
+            cards3D.forEach(card => {
+                let throttleTimeout = null;
+                
+                card.addEventListener('mousemove', (e) => {
+                    if (throttleTimeout) return;
+                    
+                    throttleTimeout = setTimeout(() => {
+                        const transform = calculate3DTransform(card, e.clientX, e.clientY);
+                        card.style.setProperty('--rotate-x', transform.rotateX + 'deg');
+                        card.style.setProperty('--rotate-y', transform.rotateY + 'deg');
+                        throttleTimeout = null;
+                    }, 16); // 60fps throttle
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.setProperty('--rotate-x', '0deg');
+                    card.style.setProperty('--rotate-y', '0deg');
+                });
+            });
+        }
+        
+        // ===== TASK 5.2: GRADIENT OVERLAY MOUSE TRACKING =====
+        function setupGradientOverlays() {
+            const overlays = document.querySelectorAll('.gradient-overlay');
+            
+            overlays.forEach(overlay => {
+                overlay.addEventListener('mousemove', (e) => {
+                    const rect = overlay.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    overlay.style.setProperty('--mouse-x', x + '%');
+                    overlay.style.setProperty('--mouse-y', y + '%');
+                });
+            });
+        }
+        
+        // ===== TASK 9.3: MICRO-INTERACTION SETUP =====
+        function setupMicroInteraction(element, type) {
+            if (type === 'ripple') {
+                element.classList.add('micro-ripple');
+                
+                element.addEventListener('click', (e) => {
+                    const rect = element.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    element.style.setProperty('--ripple-x', x + 'px');
+                    element.style.setProperty('--ripple-y', y + 'px');
+                    
+                    // Trigger animation by removing and re-adding class
+                    element.classList.remove('micro-ripple');
+                    void element.offsetWidth; // Force reflow
+                    element.classList.add('micro-ripple');
+                });
+            } else if (type === 'bounce') {
+                element.addEventListener('click', () => {
+                    element.classList.add('micro-bounce');
+                    setTimeout(() => element.classList.remove('micro-bounce'), 400);
+                });
+            } else if (type === 'shake') {
+                element.addEventListener('click', () => {
+                    element.classList.add('micro-shake');
+                    setTimeout(() => element.classList.remove('micro-shake'), 400);
+                });
+            } else if (type === 'glow') {
+                element.classList.add('micro-glow');
+            }
+        }
+        
+        // Initialize all interactive systems
+        function initializeModernUI() {
+            // Setup 3D transforms
+            setup3DTransforms();
+            
+            // Setup gradient overlays
+            setupGradientOverlays();
+            
+            // Setup micro-interactions on buttons
+            document.querySelectorAll('button').forEach(button => {
+                if (!button.hasAttribute('data-no-ripple')) {
+                    setupMicroInteraction(button, 'ripple');
+                }
+            });
+            
+            // Start particle performance monitoring
+            if (particleAnimationFrameId) {
+                cancelAnimationFrame(particleAnimationFrameId);
+            }
+            monitorParticlePerformance();
+        }
+        
+        // Initialize on page load and after render
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeModernUI);
+        } else {
+            initializeModernUI();
+        }
+        
+        // ===== TASK 18.2: THEME TOGGLE FUNCTION =====
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+        
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            
+            // Update theme toggle button icon if it exists
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            if (themeBtn) {
+                themeBtn.innerHTML = currentTheme === 'dark' 
+                    ? '<i data-lucide="sun" class="w-5 h-5"></i>' 
+                    : '<i data-lucide="moon" class="w-5 h-5"></i>';
+                if (window.lucide) window.lucide.createIcons();
+            }
+        }
+        
+        // Load saved theme on page load
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        
+        // ===== TASK 16.5: DEBOUNCING AND THROTTLING =====
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function throttle(func, limit) {
+            let inThrottle;
+            return function(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+        
+        // Debounce resize handlers
+        window.addEventListener('resize', debounce(() => {
+            initializeModernUI();
+        }, 250));
+
         // --- Global Tab Switching ---
         function switchGlobalTab(module) {
             // Cleanup Firebase listeners when switching away from SR module
@@ -612,13 +1663,27 @@
                 if (currentUser) {
                     initializeFirebaseListeners(currentUser.uid);
                 }
-                // Refresh icons for SR module
-                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+                // Initialize particles for SR module
+                setTimeout(() => {
+                    const srParticles = document.getElementById('sr-particles');
+                    if (srParticles && srParticles.children.length === 0) {
+                        generateParticles(srParticles, 80);
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+                    initializeModernUI();
+                }, 100);
             } else if (module === 'rt') {
                 document.getElementById('rt-module').classList.add('active');
                 document.getElementById('tab-rt').classList.add('active');
-                // Refresh icons for RT module
-                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+                // Initialize particles for RT module
+                setTimeout(() => {
+                    const rtParticles = document.getElementById('rt-particles');
+                    if (rtParticles && rtParticles.children.length === 0) {
+                        generateParticles(rtParticles, 80);
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+                    initializeModernUI();
+                }, 100);
             }
         }
 
@@ -1074,7 +2139,7 @@ function updateTopicOffline(id, updates) {
                         <h2 class="text-3xl font-black text-slate-900 mb-2">SYNC PRO</h2>
                         <p class="text-slate-500 font-bold">আপনার ডেটা সিঙ্ক করতে লগইন করুন</p>
                     </div>
-                    <button onclick="handleGoogleLogin()" class="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-500 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl">
+                    <button onclick="handleGoogleLogin()" class="neu-button neu-button-primary w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-500 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl">
                         <svg class="w-6 h-6" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -1111,7 +2176,7 @@ function updateTopicOffline(id, updates) {
                         ${currentTab === 'dashboard' ? `
                             <div class="bg-white p-3 rounded-[2rem] shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-3 border border-slate-100">
                                 <textarea id="quick-input" class="flex-1 bg-transparent px-6 py-4 outline-none text-xl font-bold min-h-[70px] placeholder:text-slate-300" placeholder="আজকে নতুন কি শিখলেন?"></textarea>
-                                <button onclick="addTopic(document.getElementById('quick-input').value); document.getElementById('quick-input').value = '';" class="bg-slate-900 text-white px-10 py-4 rounded-[1.5rem] font-black hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200 uppercase tracking-widest text-xs">অ্যাড করুন</button>
+                                <button onclick="addTopic(document.getElementById('quick-input').value); document.getElementById('quick-input').value = '';" class="neu-button neu-button-primary px-10 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs">অ্যাড করুন</button>
                             </div>
                         ` : ''}
 
@@ -1122,19 +2187,19 @@ function updateTopicOffline(id, updates) {
                                     <span class="text-sm font-bold text-indigo-900">Showing ${displayedTopics.length} of ${filtered.length} topics ${!allTopicsLoaded ? '(More in Firebase)' : ''}</span>
                                 </div>
                                 ${!allTopicsLoaded ? `
-                                    <button onclick="loadMoreTopics()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-indigo-700 transition-all">
+                                    <button onclick="loadMoreTopics()" class="neu-button neu-button-primary px-4 py-2 rounded-xl font-bold text-xs uppercase transition-all">
                                         Load More from Firebase
                                     </button>
                                 ` : ''}
                             </div>
                         ` : ''}
 
-                        <div class="grid grid-cols-1 gap-6">
+                        <div class="grid grid-cols-1 gap-6 transform-3d-container">
                             ${displayedTopics.map(t => {
                                 const m = calculateMetrics(t);
                                 const expanded = expandedTopics.has(t.id);
                                 return `
-                                    <div class="glass-card rounded-[1.5rem] md:rounded-[2.5rem] p-4 md:p-8 flex flex-col gap-4 md:gap-8 ${m.isDue ? 'animate-due-warning' : ''}">
+                                    <div class="glass-card transform-3d-card gradient-overlay rounded-[1.5rem] md:rounded-[2.5rem] p-4 md:p-8 flex flex-col gap-4 md:gap-8 ${m.isDue ? 'animate-due-warning' : ''}">
                                         <div class="flex items-start gap-4 flex-1 w-full" onclick="toggleExpand('${t.id}')">
                                             <div class="w-16 h-16 md:w-20 md:h-20 rounded-[1.2rem] md:rounded-[1.8rem] bg-slate-50 flex flex-col items-center justify-center shrink-0 shadow-inner border border-slate-100">
                                                 <span class="text-lg md:text-2xl font-black ${m.textColor}">${m.brainSave}%</span>
@@ -1161,10 +2226,10 @@ function updateTopicOffline(id, updates) {
                                         </div>
 
                                         <div class="flex gap-3 w-full">
-                                            <button onclick="handleReview('${t.id}')" class="flex-1 p-4 md:p-5 rounded-xl md:rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all active:scale-90 shadow-sm shadow-indigo-100 flex items-center justify-center">
+                                            <button onclick="handleReview('${t.id}')" class="neu-button neu-button-primary flex-1 p-4 md:p-5 rounded-xl md:rounded-2xl flex items-center justify-center">
                                                 <i data-lucide="refresh-cw" class="w-5 h-5 md:w-6 md:h-6"></i>
                                             </button>
-                                            <button onclick="deleteTopic('${t.id}')" class="p-4 md:p-5 rounded-xl md:rounded-2xl bg-slate-50 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90 flex items-center justify-center">
+                                            <button onclick="deleteTopic('${t.id}')" class="neu-button neu-button-danger p-4 md:p-5 rounded-xl md:rounded-2xl flex items-center justify-center">
                                                 <i data-lucide="trash-2" class="w-5 h-5 md:w-6 md:h-6"></i>
                                             </button>
                                         </div>
@@ -1270,6 +2335,11 @@ function updateTopicOffline(id, updates) {
                 setTimeout(renderCharts, 100);
             }
             lucide.createIcons();
+            
+            // Reinitialize modern UI features after render
+            setTimeout(() => {
+                initializeModernUI();
+            }, 100);
         }
 
         function renderCharts() {
@@ -2125,6 +3195,5 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
-
 
 
