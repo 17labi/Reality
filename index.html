@@ -299,7 +299,7 @@
             <span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="connection-status">System Pulse</span>
         </div>
     </div>
-    <button onclick="toggleModal(true)" class="group bg-slate-900 hover:bg-indigo-600 text-white p-2.5 md:p-3.5 rounded-xl md:rounded-2xl shadow-xl transition-all duration-300 active:scale-90"></button>
+    <button onclick="toggleModal(true)" class="group bg-slate-900 hover:bg-indigo-600 text-white p-2.5 md:p-3.5 rounded-xl md:rounded-2xl shadow-xl transition-all duration-300 active:scale-90">
         <i data-lucide="plus" class="w-5 h-5 md:w-6 md:h-6 group-hover:rotate-90 transition-transform"></i>
     </button>
 </div>
@@ -593,6 +593,9 @@
 
         // --- Global Tab Switching ---
         function switchGlobalTab(module) {
+            // Cleanup Firebase listeners when switching away from SR module
+            cleanupFirebaseListeners();
+            
             // Hide all modules
             document.getElementById('sr-module').classList.remove('active');
             document.getElementById('rt-module').classList.remove('active');
@@ -605,6 +608,10 @@
             if (module === 'sr') {
                 document.getElementById('sr-module').classList.add('active');
                 document.getElementById('tab-sr').classList.add('active');
+                // Re-initialize Firebase listeners when switching to SR module
+                if (currentUser) {
+                    initializeFirebaseListeners(currentUser.uid);
+                }
                 // Refresh icons for SR module
                 setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
             } else if (module === 'rt') {
@@ -666,13 +673,28 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // === FIREBASE DATA LISTENERS ===
+// Pagination state
+let topicsPageSize = 100;
+let topicsLoadedCount = 100;
+let allTopicsLoaded = false;
+let currentDisplayPage = 1;
+const itemsPerPage = 50;
+
 function initializeFirebaseListeners(uid) {
-    topicsListener = database.ref(`users/${uid}/spacedRepetition/topics`).on('value', (snapshot) => {
-        const data = snapshot.val();
-        topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
-        render();
-        updateSidebarStats();
-    });
+    // Use limitToLast for pagination - load most recent topics first
+    topicsListener = database.ref(`users/${uid}/spacedRepetition/topics`)
+        .orderByChild('createdAt')
+        .limitToLast(topicsPageSize)
+        .on('value', (snapshot) => {
+            const data = snapshot.val();
+            topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            
+            // Check if we've loaded all topics
+            allTopicsLoaded = topics.length < topicsPageSize;
+            
+            render();
+            updateSidebarStats();
+        });
 
     logsListener = database.ref(`users/${uid}/spacedRepetition/logs`).limitToLast(200).on('value', (snapshot) => {
         const data = snapshot.val();
@@ -681,10 +703,38 @@ function initializeFirebaseListeners(uid) {
     });
 }
 
+// Load more topics function for pagination
+function loadMoreTopics() {
+    if (!currentUser || allTopicsLoaded) return;
+    
+    topicsLoadedCount += 100;
+    
+    // Cleanup old listener
+    if (topicsListener) {
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).off('value', topicsListener);
+    }
+    
+    // Create new listener with increased limit
+    topicsListener = database.ref(`users/${currentUser.uid}/spacedRepetition/topics`)
+        .orderByChild('createdAt')
+        .limitToLast(topicsLoadedCount)
+        .on('value', (snapshot) => {
+            const data = snapshot.val();
+            topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            
+            allTopicsLoaded = topics.length < topicsLoadedCount;
+            
+            render();
+            updateSidebarStats();
+        });
+}
+
 function cleanupFirebaseListeners() {
     if (topicsListener && currentUser) {
         database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).off('value', topicsListener);
         database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).off('value', logsListener);
+        topicsListener = null;
+        logsListener = null;
     }
 }
 
@@ -944,8 +994,29 @@ function updateTopicOffline(id, updates) {
     const topic = topics.find(t => t.id === id);
     if (!topic || !confirm(`"${topic.name}" মুছে ফেলতে চান?`)) return;
 
-    database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
-        .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
+    // Check if this is an offline-created topic
+    if (id.startsWith('offline_')) {
+        // Remove from local topics array
+        topics = topics.filter(t => t.id !== id);
+        
+        // Remove from IndexedDB
+        if (db) {
+            const transaction = db.transaction(['offlineTopics'], 'readwrite');
+            const store = transaction.objectStore('offlineTopics');
+            store.delete(id);
+        }
+        
+        // Add deletion log
+        addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted");
+        
+        // Update UI
+        render();
+        updateSidebarStats();
+    } else {
+        // Firebase-synced topic - use existing Firebase deletion
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
+            .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
+    }
 }
         function switchTab(tab) {
             currentTab = tab;
@@ -1028,6 +1099,13 @@ function updateTopicOffline(id, updates) {
                 let filtered = topics.filter(t => t.name.toLowerCase().includes(query));
                 if (currentTab === 'focus') filtered = filtered.filter(t => calculateMetrics(t).isDue);
 
+                // Pagination: show items based on current page
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                const startIndex = 0;
+                const endIndex = currentDisplayPage * itemsPerPage;
+                const displayedTopics = filtered.slice(startIndex, endIndex);
+                const hasMoreToShow = endIndex < filtered.length;
+
                 container.innerHTML = `
                     <div class="max-w-6xl mx-auto space-y-10 font-bn">
                         ${currentTab === 'dashboard' ? `
@@ -1037,8 +1115,22 @@ function updateTopicOffline(id, updates) {
                             </div>
                         ` : ''}
 
+                        ${topics.length > 0 ? `
+                            <div class="bg-indigo-50 p-4 rounded-2xl flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="info" class="w-5 h-5 text-indigo-600"></i>
+                                    <span class="text-sm font-bold text-indigo-900">Showing ${displayedTopics.length} of ${filtered.length} topics ${!allTopicsLoaded ? '(More in Firebase)' : ''}</span>
+                                </div>
+                                ${!allTopicsLoaded ? `
+                                    <button onclick="loadMoreTopics()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-indigo-700 transition-all">
+                                        Load More from Firebase
+                                    </button>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+
                         <div class="grid grid-cols-1 gap-6">
-                            ${filtered.map(t => {
+                            ${displayedTopics.map(t => {
                                 const m = calculateMetrics(t);
                                 const expanded = expandedTopics.has(t.id);
                                 return `
@@ -1088,6 +1180,14 @@ function updateTopicOffline(id, updates) {
                                 </div>
                             ` : ''}
                         </div>
+                        
+                        ${hasMoreToShow ? `
+                            <div class="text-center py-6">
+                                <button onclick="currentDisplayPage++; render();" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all active:scale-95">
+                                    Load More (${filtered.length - endIndex} remaining)
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             } else if (currentTab === 'history') {
@@ -1177,8 +1277,8 @@ function updateTopicOffline(id, updates) {
             const ctx2 = document.getElementById('activityChart')?.getContext('2d');
             if (!ctx1 || !ctx2) return;
 
-            // Show all topics, not just last 15
-            const sorted = [...topics].sort((a,b) => a.createdAt - b.createdAt);
+            // Limit chart data to last 100 topics for performance with large datasets
+            const sorted = [...topics].sort((a,b) => a.createdAt - b.createdAt).slice(-100);
             const labels = sorted.map(t => t.name.length > 12 ? t.name.substring(0, 12) + '..' : t.name);
             
             // Calculate dynamic width: minimum 50px per topic, minimum container width 600px
@@ -1472,18 +1572,44 @@ function updateTopicOffline(id, updates) {
             const audioCtx = useRef(null);
 
             const playBeep = () => {
-                if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.current.createOscillator();
-                const gain = audioCtx.current.createGain();
-                oscillator.connect(gain);
-                gain.connect(audioCtx.current.destination);
-                oscillator.type = "sine";
-                oscillator.frequency.value = 880;
-                gain.gain.setValueAtTime(0, audioCtx.current.currentTime);
-                gain.gain.linearRampToValueAtTime(1, audioCtx.current.currentTime + 0.01);
-                oscillator.start(audioCtx.current.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.current.currentTime + 1);
-                oscillator.stop(audioCtx.current.currentTime + 1);
+                try {
+                    console.log('Playing beep...'); // Debug log
+                    
+                    if (!audioCtx.current) {
+                        audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+                        console.log('Audio context created');
+                    }
+                    
+                    // Resume audio context if suspended (required by browsers)
+                    if (audioCtx.current.state === 'suspended') {
+                        audioCtx.current.resume().then(() => {
+                            console.log('Audio context resumed');
+                        });
+                    }
+                    
+                    console.log('Audio context state:', audioCtx.current.state);
+                    
+                    const oscillator = audioCtx.current.createOscillator();
+                    const gain = audioCtx.current.createGain();
+                    oscillator.connect(gain);
+                    gain.connect(audioCtx.current.destination);
+                    
+                    // Use square wave for louder, more noticeable sound
+                    oscillator.type = "square";
+                    oscillator.frequency.value = 600; // Lower frequency, easier to hear
+                    
+                    // Much louder volume - start at 0.8 (80%)
+                    const now = audioCtx.current.currentTime;
+                    gain.gain.setValueAtTime(0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.3);
+                    
+                    console.log('Beep played successfully at volume 0.9');
+                } catch (error) {
+                    console.error('Audio playback error:', error);
+                }
             };
 
             const [hscTarget, setHscTarget] = useState('2026-06-30');
@@ -1546,6 +1672,10 @@ function updateTopicOffline(id, updates) {
                     setIsTimerRunning(false);
                     setIsAlarmPlaying(true); 
                     
+                    // Play initial beep immediately
+                    playBeep();
+                    
+                    // Then continue beeping every second
                     if (!alarmInterval.current) {
                         alarmInterval.current = setInterval(() => {
                             playBeep();
@@ -1580,6 +1710,22 @@ function updateTopicOffline(id, updates) {
             }, [hscTarget, buetTarget]);
 
             const startTimer = (t) => {
+                console.log('Starting timer:', t.label); // Debug log
+                
+                // Initialize audio context on user interaction (required by browsers)
+                if (!audioCtx.current) {
+                    audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log('Audio context created on timer start');
+                }
+                if (audioCtx.current.state === 'suspended') {
+                    audioCtx.current.resume().then(() => {
+                        console.log('Audio context resumed on timer start');
+                    });
+                }
+                
+                // Test beep to ensure audio is working
+                playBeep();
+                
                 setActiveTimer(t);
                 setTimerSeconds(t.minutes * 60);
                 setIsTimerRunning(true);
@@ -1979,5 +2125,6 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
+
 
 
