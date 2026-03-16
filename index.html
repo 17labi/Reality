@@ -3,71 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reality Check Dashboard | BUET Tracker</title>
+    <title>Unified Tracker - Spaced Repetition & Reality Tracking</title>
+    
+    <!-- CDN Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
-        
+        /* Global Styles */
+        * { box-sizing: border-box; }
         body { 
-            background-color: #020617; 
-            color: #f8fafc; 
             margin: 0; 
             font-family: 'Hind Siliguri', sans-serif; 
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-
-        /* Continuous Floating Animation */
+        
+        /* Global Tab Navigation Styles */
+        .global-tab-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .global-tab-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .global-tab-btn {
+            padding: 0.75rem 2rem;
+            border-radius: 1rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .global-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+        }
+        
+        .global-tab-btn.active {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+        
+        .module-container {
+            display: none;
+            padding-top: 80px;
+        }
+        
+        .module-container.active {
+            display: block;
+        }
+        
+        /* Spaced Repetition Module Styles */
+        .sr-module {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+            min-height: 100vh;
+        }
+        
+        .sr-module .font-bn { font-family: 'Hind Siliguri', sans-serif; }
+        .sr-module .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .sr-module .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .sr-module .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .sr-module .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        .sr-module .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sr-module .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+        .sr-module .animate-due-warning { 
+            border: 2px solid #fb7185 !important;
+            animation: pulse-border 2s infinite;
+        }
+        
+        .sr-module .tab-active { 
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white; 
+            box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.4); 
+        }
+        
+        .sr-module .progress-bar-bg { background: #f1f5f9; border-radius: 999px; height: 6px; overflow: hidden; }
+        .sr-module .progress-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        .sr-module .sidebar-item { transition: all 0.3s ease; }
+        .sr-module .sidebar-item:hover:not(.tab-active) { background: rgba(255, 255, 255, 0.05); }
+        
+        .sr-module .log-entry-added { border-left: 5px solid #0ea5e9; }
+        .sr-module .log-entry-revised { border-left: 5px solid #84cc16; }
+        .sr-module .log-entry-deleted { border-left: 5px solid #f43f5e; }
+        
+        .sr-module .chart-container { position: relative; height: 300px; width: 100%; }
+        
+        .sr-module .chart-container-scrollable { 
+            position: relative; 
+            height: 300px; 
+            min-width: 600px;
+        }
+        
+        .sr-module .animate-spin-slow { animation: spin 8s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Reality Tracking Module Styles */
+        .rt-module {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Hind Siliguri', sans-serif;
+            min-height: 100vh;
+        }
+        
         @keyframes float-rtl {
             0% { transform: translateX(110vw); }
             100% { transform: translateX(-150vw); }
         }
-
-        .animate-float-rtl {
+        
+        .rt-module .animate-float-rtl {
             animation: float-rtl linear infinite;
         }
-
-        .glass {
+        
+        .rt-module .glass {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .neo-button {
+        
+        .rt-module .neo-button {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .neo-button:active {
+        
+        .rt-module .neo-button:active {
             transform: scale(0.95);
         }
-
-        .glow-text {
+        
+        .rt-module .glow-text {
             text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.2);
         }
-
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-
-        input[type="date"]::-webkit-calendar-picker-indicator {
+        
+        .rt-module ::-webkit-scrollbar { width: 4px; }
+        .rt-module ::-webkit-scrollbar-track { background: #020617; }
+        .rt-module ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        
+        .rt-module input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
-
-        .graph-bar {
+        
+        .rt-module .graph-bar {
             transition: height 1s ease-out;
         }
-
-        .calendar-dot {
+        
+        .rt-module .calendar-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
@@ -75,36 +213,753 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <!-- Global Tab Navigation -->
+    <div class="global-tab-nav">
+        <div class="global-tab-container">
+            <button id="tab-sr" class="global-tab-btn active" onclick="switchGlobalTab('sr')">
+                <span>📚</span>
+                <span>Spaced Repetition</span>
+            </button>
+            <button id="tab-rt" class="global-tab-btn" onclick="switchGlobalTab('rt')">
+                <span>🎯</span>
+                <span>Reality Tracking</span>
+            </button>
+        </div>
+    </div>
 
+    <!-- Spaced Repetition Module -->
+    <div id="sr-module" class="module-container sr-module active">
+        <div id="sr-app" class="flex flex-col md:flex-row h-screen overflow-hidden">
+            <!-- Smart Sidebar -->
+            <aside class="order-2 md:order-1 fixed bottom-0 left-0 right-0 md:relative md:w-24 lg:w-72 bg-[#020617] text-white flex md:flex-col z-50 p-3 md:p-6 shrink-0 font-bn">
+                <div class="hidden md:flex items-center gap-4 mb-12 px-2">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20">
+                        <i data-lucide="zap" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div class="hidden lg:block">
+                        <h1 class="font-black text-xl tracking-tighter leading-none">SYNC PRO</h1>
+                        <span class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Neural Brain Tool</span>
+                    </div>
+                </div>
+                
+                <nav class="flex md:flex-col w-full gap-2 md:gap-3">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-item tab-active flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 rounded-2xl flex-1 md:flex-none">
+                        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                        <span class="text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">ড্যাশবোর্ড</span>
+                    </button>
+                    <button onclick="switchTab('focus')" id="nav-focus" class="sidebar-item text-slate-500 flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 rounded-2xl flex-1 md:flex-none">
+                        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                        <span class="text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">রিভিশন ডিউ</span>
+                    </button>
+                    <button onclick="switchTab('history')" id="nav-history" class="sidebar-item text-slate-500 flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 rounded-2xl flex-1 md:flex-none">
+                        <i data-lucide="scroll-text" class="w-5 h-5"></i>
+                        <span class="text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">ইতিহাস</span>
+                    </button>
+                    <button onclick="switchTab('analytics')" id="nav-analytics" class="sidebar-item text-slate-500 flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 rounded-2xl flex-1 md:flex-none">
+                        <i data-lucide="line-chart" class="w-5 h-5"></i>
+                        <span class="text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">বিশ্লেষণ</span>
+                    </button>
+                </nav>
+
+                <div class="hidden lg:block mt-auto p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">ব্রেইন হেলথ</p>
+                    <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div id="sidebar-retention-fill" class="h-full bg-indigo-500 transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Workspace -->
+            <main class="order-1 md:order-2 flex-1 flex flex-col h-[calc(100vh-80px)] md:h-screen overflow-hidden">
+                <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 md:px-10 flex items-center justify-between sticky top-0 z-40 shrink-0 font-bn">
+                    <div class="flex-1 max-w-xl relative group">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors"></i>
+                        <input id="search-input" type="text" placeholder="পড়া বা ইতিহাস খুঁজুন..." oninput="render()" 
+                               class="w-full pl-12 pr-4 py-3 bg-slate-100/50 border border-transparent focus:border-indigo-500/30 focus:bg-white rounded-2xl text-sm outline-none font-bn transition-all shadow-sm">
+                    </div>
+                    
+                  <div class="flex items-center gap-4 ml-6">
+    <div id="user-profile-container"></div>
+    <div class="hidden sm:flex flex-col items-end">
+        <span id="live-clock" class="text-lg font-mono font-black text-slate-800 leading-none tracking-tighter">00:00:00</span>
+        <div class="flex items-center gap-1.5">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">System Pulse</span>
+        </div>
+    </div>
+    <button onclick="toggleModal(true)" class="group bg-slate-900 hover:bg-indigo-600 text-white p-3.5 rounded-2xl shadow-xl transition-all duration-300 active:scale-90">
+        <i data-lucide="plus" class="w-6 h-6 group-hover:rotate-90 transition-transform"></i>
+    </button>
+</div>
+                </header>
+
+                <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar pb-32">
+                    <!-- Content Injected Here -->
+                </div>
+            </main>
+
+            <!-- Ultra Modal -->
+            <div id="modal" class="hidden fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl font-bn border border-slate-100">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">নতুন সিঙ্ক যোগ করুন</h2>
+                            <p class="text-sm text-slate-400 font-bold">আপনার রিটেনশন ট্র্যাকিং শুরু করুন</p>
+                        </div>
+                        <button onclick="toggleModal(false)" class="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">বিষয়ের বিবরণ</label>
+                            <textarea id="modal-name" placeholder="বিস্তারিত লিখুন..." class="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-lg min-h-[140px] focus:ring-4 ring-indigo-50 transition-all"></textarea>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">পড়ার তারিখ</label>
+                            <input id="modal-date" type="date" class="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none font-mono focus:ring-4 ring-indigo-50 transition-all">
+                        </div>
+                        <button onclick="addTopicManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-indigo-200 transition-all active:scale-95">ডেটা সিঙ্ক করুন</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reality Tracking Module -->
+    <div id="rt-module" class="module-container rt-module">
+        <div id="root"></div>
+    </div>
+
+    <!-- Spaced Repetition JavaScript -->
+     
+    <script>
+
+        
+    const firebaseConfig = {
+        apiKey: "AIzaSyBtSqPxbB_-tuOWbor-ipHPrtx4gA3yNGA",
+        authDomain: "buet-tracker.firebaseapp.com",
+        projectId: "buet-tracker",
+        storageBucket: "buet-tracker.firebasestorage.app",
+        messagingSenderId: "296969097637",
+        appId: "1:296969097637:web:3d77b2818501f2951c184c",
+        measurementId: "G-0CS4ZWD0BH",
+        databaseURL: "https://buet-tracker-default-rtdb.firebaseio.com/"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
+    const auth = firebase.auth();
+    const database = firebase.database();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    function updateUserProfile() {
+    const container = document.getElementById('user-profile-container');
+    if (!container) return;
+    
+    if (currentUser) {
+        container.innerHTML = `
+            <div class="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-100 rounded-xl">
+                <img src="${currentUser.photoURL || 'https://via.placeholder.com/32'}" alt="User" class="w-8 h-8 rounded-full" />
+                <div class="text-left">
+                    <p class="text-xs font-bold text-slate-800 leading-none">${(currentUser.displayName || 'User').split(' ')[0]}</p>
+                    <button onclick="handleLogout()" class="text-[9px] text-red-500 font-bold uppercase hover:underline">Logout</button>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = '';
+    }
+}
+
+        // --- Global Tab Switching ---
+        function switchGlobalTab(module) {
+            // Hide all modules
+            document.getElementById('sr-module').classList.remove('active');
+            document.getElementById('rt-module').classList.remove('active');
+            
+            // Remove active class from all tabs
+            document.getElementById('tab-sr').classList.remove('active');
+            document.getElementById('tab-rt').classList.remove('active');
+            
+            // Show selected module and activate tab
+            if (module === 'sr') {
+                document.getElementById('sr-module').classList.add('active');
+                document.getElementById('tab-sr').classList.add('active');
+                // Refresh icons for SR module
+                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+            } else if (module === 'rt') {
+                document.getElementById('rt-module').classList.add('active');
+                document.getElementById('tab-rt').classList.add('active');
+                // Refresh icons for RT module
+                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+            }
+        }
+
+        // --- Spaced Repetition State Management ---
+let currentUser = null;
+let topics = [];
+let logs = [];
+let topicsListener = null;
+let logsListener = null;
+let currentTab = 'dashboard';
+let expandedTopics = new Set();
+const SCIENTIFIC_GAPS = [0, 1, 3, 7, 14, 30, 60, 90, 180, 365, 730, 1095];
+
+        function handleGoogleLogin() {
+    auth.signInWithPopup(googleProvider)
+        .catch((error) => {
+            console.error("Login error:", error);
+            alert("লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।");
+        });
+}
+
+function handleLogout() {
+    if (confirm("লগআউট করতে চান?")) {
+        auth.signOut();
+    }
+}
+
+auth.onAuthStateChanged((user) => {
+    currentUser = user;
+    if (user) {
+        initializeFirebaseListeners(user.uid);
+        migrateLocalStorageToFirebase(user.uid);
+    } else {
+        cleanupFirebaseListeners();
+        topics = [];
+        logs = [];
+    }
+    updateUserProfile(); // ADD THIS LINE
+    render();
+});
+
+// === FIREBASE DATA LISTENERS ===
+function initializeFirebaseListeners(uid) {
+    topicsListener = database.ref(`users/${uid}/spacedRepetition/topics`).on('value', (snapshot) => {
+        const data = snapshot.val();
+        topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+        render();
+        updateSidebarStats();
+    });
+
+    logsListener = database.ref(`users/${uid}/spacedRepetition/logs`).limitToLast(200).on('value', (snapshot) => {
+        const data = snapshot.val();
+        logs = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) : [];
+        if (currentTab === 'history') render();
+    });
+}
+
+function cleanupFirebaseListeners() {
+    if (topicsListener && currentUser) {
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).off('value', topicsListener);
+        database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).off('value', logsListener);
+    }
+}
+
+// === DATA MIGRATION ===
+function migrateLocalStorageToFirebase(uid) {
+    const migrationKey = `migration_done_${uid}`;
+    if (localStorage.getItem(migrationKey)) return;
+
+    const localTopics = JSON.parse(localStorage.getItem('ss_ultra_v3')) || [];
+    const localLogs = JSON.parse(localStorage.getItem('ss_ultra_logs')) || [];
+    
+    if (localTopics.length === 0 && localLogs.length === 0) {
+        localStorage.setItem(migrationKey, 'true');
+        return;
+    }
+
+    if (confirm(`${localTopics.length}টি টপিক Firebase-এ স্থানান্তর করতে চান?`)) {
+        localTopics.forEach(topic => {
+            database.ref(`users/${uid}/spacedRepetition/topics`).push().set({
+                name: topic.name,
+                revCount: topic.revCount,
+                startTime: topic.startTime,
+                nextDate: topic.nextDate,
+                createdAt: topic.createdAt
+            });
+        });
+
+        localLogs.forEach(log => {
+            database.ref(`users/${uid}/spacedRepetition/logs`).push().set({
+                topicName: log.topicName,
+                action: log.action,
+                type: log.type,
+                time: log.time,
+                timestamp: log.id || Date.now()
+            });
+        });
+
+        localStorage.setItem(migrationKey, 'true');
+        alert("ডেটা সফলভাবে স্থানান্তরিত হয়েছে!");
+    }
+}
+
+        function calculateMetrics(topic) {
+            const now = Date.now();
+            const elapsedMs = now - topic.startTime;
+            const elapsedHours = elapsedMs / 3600000;
+            const gapIndex = Math.min(topic.revCount, SCIENTIFIC_GAPS.length - 1);
+            const currentGapDays = SCIENTIFIC_GAPS[gapIndex] || (topic.revCount * 30);
+            const nextGapDays = SCIENTIFIC_GAPS[gapIndex + 1] || (currentGapDays + 30);
+            const totalCycleMs = nextGapDays * 86400000;
+            const remainingMs = topic.nextDate - now;
+
+            const baseRetention = 80 + (topic.revCount * 4);
+            const stabilityFactor = Math.max(24, currentGapDays * 24 * (1 + topic.revCount * 0.5));
+            const currentRetention = baseRetention * Math.exp(-elapsedHours / stabilityFactor);
+            const brainSave = Math.max(5, Math.min(100, Math.round(currentRetention)));
+
+            let battery = 100;
+            const gracePeriod = 24 * 3600000;
+            if (elapsedMs > gracePeriod) {
+                const effectiveElapsed = elapsedMs - gracePeriod;
+                const effectiveTotal = totalCycleMs - gracePeriod;
+                battery = 100 - (effectiveElapsed / effectiveTotal * 100);
+            }
+            battery = Math.max(0, Math.min(100, Math.round(battery)));
+
+            let color = 'bg-indigo-500';
+            let textColor = 'text-indigo-600';
+            if (battery < 25) { color = 'bg-rose-500'; textColor = 'text-rose-600'; }
+            else if (battery < 50) { color = 'bg-orange-500'; textColor = 'text-orange-600'; }
+            else if (battery < 75) { color = 'bg-amber-500'; textColor = 'text-amber-600'; }
+
+            let timerStr = "এখনই রিভাইজ দিন";
+            if (remainingMs > 0) {
+                const h = Math.floor(remainingMs / 3600000);
+                const m = Math.floor((remainingMs % 3600000) / 60000);
+                timerStr = `${h}ঘণ্টা ${m}মিনিট পর`;
+            }
+
+            return {
+                battery, color, textColor, brainSave, isDue: now >= topic.nextDate,
+                timerStr,
+                addedStr: new Date(topic.createdAt).toLocaleDateString('bn-BD'),
+                nextDateStr: new Date(topic.nextDate).toLocaleDateString('bn-BD', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })
+            };
+        }
+
+       function addLog(topicName, action, type) {
+    if (!currentUser) return;
+    database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).push().set({
+        topicName, action, type,
+        time: new Date().toLocaleString('bn-BD', { hour12: true }),
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+      function addTopic(name, customDate = null) {
+    if (!name.trim() || !currentUser) return;
+    
+    const createdAt = customDate ? new Date(customDate).getTime() : Date.now();
+    const topicData = {
+        name: name.trim(),
+        revCount: 0,
+        startTime: createdAt,
+        nextDate: createdAt + 86400000,
+        createdAt: createdAt
+    };
+
+    database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push().set(topicData)
+        .then(() => addLog(name, "নতুন রেকর্ড যোগ করা হয়েছে", "added"))
+        .catch((error) => {
+            console.error("Error:", error);
+            alert("টপিক যোগ করতে ব্যর্থ হয়েছে।");
+        });
+}
+function handleReview(id) {
+    if (!currentUser) return;
+    const topic = topics.find(t => t.id === id);
+    if (!topic) return;
+
+    const now = Date.now();
+    const newRevCount = topic.revCount + 1;
+    const days = SCIENTIFIC_GAPS[Math.min(newRevCount, SCIENTIFIC_GAPS.length - 1)];
+    
+    database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).update({
+        revCount: newRevCount,
+        startTime: now,
+        nextDate: now + (days * 86400000)
+    }).then(() => addLog(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised"));
+}
+
+      function deleteTopic(id) {
+    if (!currentUser) return;
+    const topic = topics.find(t => t.id === id);
+    if (!topic || !confirm(`"${topic.name}" মুছে ফেলতে চান?`)) return;
+
+    database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
+        .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
+}
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('tab-active', 'text-white'));
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.add('text-slate-500'));
+            const active = document.getElementById(`nav-${tab}`);
+            active.classList.add('tab-active', 'text-white');
+            active.classList.remove('text-slate-500');
+            render();
+        }
+
+        function toggleExpand(id) {
+            if (expandedTopics.has(id)) expandedTopics.delete(id);
+            else expandedTopics.add(id);
+            render();
+        }
+
+     function toggleModal(show) {
+    if (show && !currentUser) {
+        alert("প্রথমে লগইন করুন!");
+        return;
+    }
+    document.getElementById('modal').classList.toggle('hidden', !show);
+    if(show) document.getElementById('modal-date').valueAsDate = new Date();
+}
+        function addTopicManual() {
+            const n = document.getElementById('modal-name').value;
+            const d = document.getElementById('modal-date').value;
+            if(n && d) {
+                addTopic(n, d);
+                toggleModal(false);
+                document.getElementById('modal-name').value = '';
+            }
+        }
+
+        function updateSidebarStats() {
+            const avg = topics.length ? Math.round(topics.reduce((acc, t) => acc + calculateMetrics(t).brainSave, 0) / topics.length) : 0;
+            document.getElementById('sidebar-retention-fill').style.width = `${avg}%`;
+        }
+
+        // --- Render Functions ---
+        function render() {
+
+ const container = document.getElementById('content-area');
+    
+    // === SHOW LOGIN IF NOT AUTHENTICATED ===
+    if (!currentUser) {
+        container.innerHTML = `
+            <div class="flex items-center justify-center min-h-[60vh]">
+                <div class="glass-card rounded-[2.5rem] p-10 text-center space-y-6 max-w-md mx-auto font-bn">
+                    <div class="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-indigo-500/20">
+                        <i data-lucide="zap" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-900 mb-2">SYNC PRO</h2>
+                        <p class="text-slate-500 font-bold">আপনার ডেটা সিঙ্ক করতে লগইন করুন</p>
+                    </div>
+                    <button onclick="handleGoogleLogin()" class="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-500 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        <span>Google দিয়ে সাইন ইন করুন</span>
+                    </button>
+                    <p class="text-xs text-slate-400">আপনার ডেটা নিরাপদে Firebase-এ সংরক্ষিত থাকবে</p>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
+    }
+  // === REST OF EXISTING RENDER CODE BELOW ===
+    const query = document.getElementById('search-input').value.toLowerCase();
+
+           
+
+            if (currentTab === 'dashboard' || currentTab === 'focus') {
+                let filtered = topics.filter(t => t.name.toLowerCase().includes(query));
+                if (currentTab === 'focus') filtered = filtered.filter(t => calculateMetrics(t).isDue);
+
+                container.innerHTML = `
+                    <div class="max-w-6xl mx-auto space-y-10 font-bn">
+                        ${currentTab === 'dashboard' ? `
+                            <div class="bg-white p-3 rounded-[2rem] shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-3 border border-slate-100">
+                                <textarea id="quick-input" class="flex-1 bg-transparent px-6 py-4 outline-none text-xl font-bold min-h-[70px] placeholder:text-slate-300" placeholder="আজকে নতুন কি শিখলেন?"></textarea>
+                                <button onclick="addTopic(document.getElementById('quick-input').value); document.getElementById('quick-input').value = '';" class="bg-slate-900 text-white px-10 py-4 rounded-[1.5rem] font-black hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200 uppercase tracking-widest text-xs">অ্যাড করুন</button>
+                            </div>
+                        ` : ''}
+
+                        <div class="grid grid-cols-1 gap-6">
+                            ${filtered.map(t => {
+                                const m = calculateMetrics(t);
+                                const expanded = expandedTopics.has(t.id);
+                                return `
+                                    <div class="glass-card rounded-[2.5rem] p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center ${m.isDue ? 'animate-due-warning' : ''}">
+                                        <div class="flex items-center gap-6 flex-1 w-full" onclick="toggleExpand('${t.id}')">
+                                            <div class="w-20 h-20 rounded-[1.8rem] bg-slate-50 flex flex-col items-center justify-center shrink-0 shadow-inner border border-slate-100">
+                                                <span class="text-2xl font-black ${m.textColor}">${m.brainSave}%</span>
+                                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Brain</span>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <h3 class="text-xl md:text-2xl font-black text-slate-800 leading-tight ${expanded ? 'whitespace-pre-wrap' : 'line-clamp-2'}">${t.name}</h3>
+                                                <div class="flex flex-wrap gap-4 mt-3">
+                                                    <span class="flex items-center gap-1.5 text-xs font-bold text-slate-400"><i data-lucide="history" class="w-3.5 h-3.5"></i> রিভিশন: ${t.revCount}</span>
+                                                    <span class="flex items-center gap-1.5 text-xs font-bold text-slate-400"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> শুরু: ${m.addedStr}</span>
+                                                    <span class="flex items-center gap-1.5 text-xs font-bold ${m.isDue ? 'text-rose-600' : 'text-blue-600'}"><i data-lucide="calendar-check" class="w-3.5 h-3.5"></i> পরবর্তী: ${m.nextDateStr}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="w-full md:w-64 space-y-3">
+                                            <div class="flex justify-between items-end">
+                                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">সিঙ্ক স্ট্যাটাস</span>
+                                                <span class="text-xs font-bold ${m.isDue ? 'text-rose-600 font-black' : 'text-slate-600'}">${m.timerStr}</span>
+                                            </div>
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill ${m.color}" style="width: ${m.battery}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-3 w-full md:w-auto">
+                                            <button onclick="handleReview('${t.id}')" class="flex-1 md:flex-none p-5 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all active:scale-90 shadow-sm shadow-indigo-100">
+                                                <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                                            </button>
+                                            <button onclick="deleteTopic('${t.id}')" class="p-5 rounded-2xl bg-slate-50 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90">
+                                                <i data-lucide="trash-2" class="w-6 h-6"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${filtered.length === 0 ? `
+                                <div class="py-20 text-center space-y-4">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                                        <i data-lucide="search-x" class="w-10 h-10"></i>
+                                    </div>
+                                    <p class="text-slate-400 font-bold">আপনি যা খুঁজছেন তা পাওয়া যায়নি।</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (currentTab === 'history') {
+                const filteredLogs = logs.filter(l => l.topicName.toLowerCase().includes(query));
+                container.innerHTML = `
+                    <div class="max-w-4xl mx-auto space-y-8 font-bn">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-3xl font-black text-slate-900">অ্যাক্টিভিটি টাইমলাইন</h2>
+                            <span class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase">সর্বশেষ ২০০টি রেকর্ড</span>
+                        </div>
+                        <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+                            <div class="divide-y divide-slate-50">
+                                ${filteredLogs.map(log => `
+                                    <div class="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors ${log.type === 'added' ? 'log-entry-added' : (log.type === 'revised' ? 'log-entry-revised' : 'log-entry-deleted')}">
+                                        <div class="min-w-0 mr-6">
+                                            <p class="text-lg font-black text-slate-800 truncate mb-1">${log.topicName}</p>
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${log.type === 'added' ? 'bg-sky-100 text-sky-600' : (log.type === 'revised' ? 'bg-lime-100 text-lime-600' : 'bg-rose-100 text-rose-600')}">
+                                                    ${log.action}
+                                                </span>
+                                                <span class="text-xs text-slate-400 font-bold">${log.time}</span>
+                                            </div>
+                                        </div>
+                                        <div class="shrink-0 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                                            <i data-lucide="${log.type === 'added' ? 'plus-circle' : (log.type === 'revised' ? 'check-circle' : 'minus-circle')}" class="w-5 h-5"></i>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (currentTab === 'analytics') {
+                container.innerHTML = `
+                    <div class="max-w-7xl mx-auto space-y-8 font-bn">
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">মোট নোটস</p>
+                                <p class="text-4xl font-black font-mono text-slate-900">${topics.length}</p>
+                            </div>
+                            <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">রিভিশন ডিউ</p>
+                                <p class="text-4xl font-black font-mono text-rose-500">${topics.filter(t => calculateMetrics(t).isDue).length}</p>
+                            </div>
+                            <div class="bg-slate-900 p-8 rounded-[2rem] shadow-2xl shadow-indigo-200 col-span-2 flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-2">গড় মেমোরি রিটেনশন</p>
+                                    <p class="text-5xl font-black font-mono text-white">${topics.length ? Math.round(topics.reduce((acc, t) => acc + calculateMetrics(t).brainSave, 0) / topics.length) : 0}%</p>
+                                </div>
+                                <div class="w-20 h-20 rounded-full border-8 border-indigo-500/20 border-t-indigo-500 animate-spin-slow"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                <div class="flex items-center gap-3 mb-8">
+                                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><i data-lucide="brain" class="w-6 h-6"></i></div>
+                                    <h3 class="text-xl font-black text-slate-800">ব্রেইন রিটেনশন পাওয়ার</h3>
+                                </div>
+                                <div class="overflow-x-auto custom-scrollbar">
+                                    <div class="chart-container-scrollable">
+                                        <canvas id="retentionChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                <div class="flex items-center gap-3 mb-8">
+                                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="refresh-ccw" class="w-6 h-6"></i></div>
+                                    <h3 class="text-xl font-black text-slate-800">রিভিশন অ্যাক্টিভিটি লোড</h3>
+                                </div>
+                                <div class="overflow-x-auto custom-scrollbar">
+                                    <div class="chart-container-scrollable">
+                                        <canvas id="activityChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                setTimeout(renderCharts, 100);
+            }
+            lucide.createIcons();
+        }
+
+        function renderCharts() {
+            const ctx1 = document.getElementById('retentionChart')?.getContext('2d');
+            const ctx2 = document.getElementById('activityChart')?.getContext('2d');
+            if (!ctx1 || !ctx2) return;
+
+            // Show all topics, not just last 15
+            const sorted = [...topics].sort((a,b) => a.createdAt - b.createdAt);
+            const labels = sorted.map(t => t.name.length > 12 ? t.name.substring(0, 12) + '..' : t.name);
+            
+            // Calculate dynamic width: minimum 50px per topic, minimum container width 600px
+            const minWidth = Math.max(600, sorted.length * 50);
+            
+            // Set canvas parent width
+            const container1 = ctx1.canvas.parentElement;
+            const container2 = ctx2.canvas.parentElement;
+            container1.style.width = `${minWidth}px`;
+            container2.style.width = `${minWidth}px`;
+            container1.style.height = '300px';
+            container2.style.height = '300px';
+            
+            // Retention Chart
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Retention %',
+                        data: sorted.map(t => calculateMetrics(t).brainSave),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return sorted[context[0].dataIndex].name;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { min: 0, max: 100, grid: { display: false } }, 
+                        x: { 
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        } 
+                    }
+                }
+            });
+
+            // Activity Chart
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Revision Count',
+                        data: sorted.map(t => t.revCount),
+                        backgroundColor: '#10b981',
+                        borderRadius: 12,
+                        barThickness: 24
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return sorted[context[0].dataIndex].name;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { display: false } }, 
+                        x: { 
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        } 
+                    }
+                }
+            });
+        }
+
+        // --- Clock & Init ---
+        function updateTick() {
+            const clock = document.getElementById('live-clock');
+            if (clock) clock.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        setInterval(updateTick, 1000);
+        setInterval(() => { if (currentTab === 'dashboard' || currentTab === 'focus') render(); }, 30000);
+        
+        window.addEventListener('load', () => {
+            render();
+            updateSidebarStats();
+            lucide.createIcons();
+        });
+    </script>
+
+    <!-- Reality Tracking React Component -->
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBtSqPxbB_-tuOWbor-ipHPrtx4gA3yNGA",
-            authDomain: "buet-tracker.firebaseapp.com",
-            projectId: "buet-tracker",
-            storageBucket: "buet-tracker.firebasestorage.app",
-            messagingSenderId: "296969097637",
-            appId: "1:296969097637:web:3d77b2818501f2951c184c",
-            measurementId: "G-0CS4ZWD0BH",
-            databaseURL: "https://buet-tracker-default-rtdb.firebaseio.com/"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
         
-        const database = firebase.database();
-        const auth = firebase.auth();
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+       
 
         const Icon = ({ name, size = 20, className = "" }) => {
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
         const MOTIVATIONAL_QUOTES = [
-            "Consistency is more important than Intensity অর্থাৎ, একদিন ১৮ ঘণ্টা পড়ার চেয়ে প্রতিদিন নিয়ম করে ১০ ঘণ্টা পড়াই হলো বুয়েট বা জীবনের যেকোনো বড় অর্জনের আসল চাবিকাঠি",
+            "Consistency is more important than Intensity অর্থাৎ, একদিন ১৮ ঘণ্টা পড়ার চেয়ে প্রতিদিন নিয়ম করে ১০ ঘণ্টা পড়াই হলো বুয়েট বা জীবনের যেকোনো বড় অর্জনের আসল চাবিকাঠি",
             "বুয়েট ক্যাম্পাস তোমার অপেক্ষায়।",
             "কষ্ট আজ করলে, মিষ্টি কাল হবে।",
             "নিয়মিত পরিশ্রম মেধার চেয়েও বেশি শক্তিশালী।",
@@ -141,12 +996,12 @@
 "হে প্রশান্ত আত্মা! তুমি তোমার রবের কাছে ফিরে এসো সন্তুষ্ট হয়ে। (সুরা ফাজর: ২৭-২৮)",
  "তোমরা আমাকে স্মরণ করো, আমিও তোমাদের স্মরণ করব। (সুরা বাকারা: ১৫২)",
 "যে সৎকাজ করবে, আমি তাকে পবিত্র জীবন দান করব। (সুরা নাহল: ৯৭)",
+            "যে আল্লাহর ওপর ভরসা করে, তার জন্য তিনিই যথেষ্ট। (সুরা তালাক: ৩)"        
+        ];
 
-            "যে আল্লাহর ওপর ভরসা করে, তার জন্য তিনিই যথেষ্ট। (সুরা তালাক: ৩)"        ];
-
-                // গ্লোবাল ট্র্যাকার
+        // গ্লোবাল ট্র্যাকার
         const occupiedLanes = new Array(12).fill(false);
-        let activeNotesCount = 0; // স্ক্রিনে বর্তমানে কয়টি নোট আছে তা ট্র্যাক করবে
+        let activeNotesCount = 0;
 
         const FloatingNote = ({ text, index }) => {
             const noteRef = useRef(null);
@@ -159,13 +1014,11 @@
                 let isNoteActive = false;
 
                 const startFloating = () => {
-                    // ১. স্ক্রিনে ৬টির বেশি নোট থাকলে ওয়েট করবে
                     if (activeNotesCount >= 6) {
-                        setTimeout(startFloating, 2000 + Math.random() * 3000); // ২-৫ সেকেন্ড পর আবার চেক করবে
+                        setTimeout(startFloating, 2000 + Math.random() * 3000);
                         return;
                     }
 
-                    // ২. খালি গলি খোঁজা
                     const availableLanes = occupiedLanes
                         .map((occ, i) => occ ? null : i)
                         .filter(i => i !== null);
@@ -175,24 +1028,21 @@
                         return;
                     }
 
-                    // ৩. নোট একটিভ করা এবং লেন দখল করা
                     const randomIdx = Math.floor(Math.random() * availableLanes.length);
                     currentLane = availableLanes[randomIdx];
                     occupiedLanes[currentLane] = true;
                     activeNotesCount++;
                     isNoteActive = true;
 
-                    // ৪. স্টাইল এবং পজিশন (গ্যাপ বাড়ানোর জন্য translateX এর শুরুটা দূরে রাখা হয়েছে)
                     const topPos = 12 + (currentLane * 7); 
                     element.style.top = `${topPos}%`;
                     element.style.visibility = 'visible';
 
-                    // ৫. র্যান্ডম স্পিড
-                    const duration = Math.floor(Math.random() * 40000) + 60000; // ২০-৩০ সেকেন্ড
+                    const duration = Math.floor(Math.random() * 40000) + 60000;
 
                     const animation = element.animate([
-                        { transform: 'translateX(120vw)' }, // স্ক্রিনের অনেক বাইরে থেকে শুরু
-                        { transform: 'translateX(-180vw)' } // স্ক্রিন পুরোপুরি পার হওয়া
+                        { transform: 'translateX(120vw)' },
+                        { transform: 'translateX(-180vw)' }
                     ], {
                         duration: duration,
                         easing: 'linear',
@@ -200,23 +1050,17 @@
                     });
 
                     animation.onfinish = () => {
-                        // ৬. রিসেট লজিক: স্ক্রিন পার হলে লেন এবং কাউন্ট খালি করে দেওয়া
                         if (currentLane !== -1) occupiedLanes[currentLane] = false;
                         if (isNoteActive) {
                             activeNotesCount--;
                             isNoteActive = false;
                         }
                         element.style.visibility = 'hidden';
-                        
-                        // নতুন সাইকেল শুরুর আগে র্যান্ডম গ্যাপ দেওয়া
                         setTimeout(startFloating, 1000 + Math.random() * 5000);
                     };
                 };
 
-                // শুরুতে সব নোট ইনভিজিবল থাকবে
                 element.style.visibility = 'hidden';
-                
-                // প্রথমবার একেকটি নোট একেক সময় ট্রাই করা শুরু করবে যাতে শুরুতে ধাক্কা না লাগে
                 const initialStartTimeout = setTimeout(startFloating, index * 3000);
 
                 return () => {
@@ -244,12 +1088,13 @@
             const [user, setUser] = useState(null);
             const [showMeaning, setShowMeaning] = useState(false);
 
-useEffect(() => {
-    const interval = setInterval(() => {
-        setShowMeaning(prev => !prev);
-    }, 5000); // 5 সেকেন্ড পর পর নাম এবং অর্থ পরিবর্তন হবে
-    return () => clearInterval(interval);
-}, []);
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setShowMeaning(prev => !prev);
+                }, 5000);
+                return () => clearInterval(interval);
+            }, []);
+            
             const [history, setHistory] = useState([]);
             const [notes, setNotes] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -260,18 +1105,17 @@ useEffect(() => {
             const [showSettings, setShowSettings] = useState(false);
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
-const alarmInterval = useRef(null);
+            const alarmInterval = useRef(null);
 
-// অ্যালার্ম বন্ধ করার ফাংশন
-const stopAlarm = () => {
-    if (alarmInterval.current) {
-        clearInterval(alarmInterval.current);
-        alarmInterval.current = null;
-    }
-    setIsAlarmPlaying(false);
-    setTimerSeconds(0);
-    setActiveTimer(null);
-};
+            const stopAlarm = () => {
+                if (alarmInterval.current) {
+                    clearInterval(alarmInterval.current);
+                    alarmInterval.current = null;
+                }
+                setIsAlarmPlaying(false);
+                setTimerSeconds(0);
+                setActiveTimer(null);
+            };
 
             const [timers, setTimers] = useState([]);
             const [activeTimer, setActiveTimer] = useState(null);
@@ -299,16 +1143,13 @@ const stopAlarm = () => {
             const [buetTarget, setBuetTarget] = useState('2026-10-15');
             const [timeLeft, setTimeLeft] = useState({ hsc: { d: 0, h: 0 }, buet: { d: 0, h: 0 } });
 
-            // আজকের তারিখ অনুযায়ী একটি ফিক্সড ইনডেক্স তৈরি করা
-const todayIndex = useMemo(() => {
-    const today = new Date();
-    // বছর, মাস এবং দিন যোগ করে একটি ইউনিক সংখ্যা তৈরি
-    return (today.getFullYear() * 100) + (today.getMonth() + 1) + today.getDate();
-}, []);
+            const todayIndex = useMemo(() => {
+                const today = new Date();
+                return (today.getFullYear() * 100) + (today.getMonth() + 1) + today.getDate();
+            }, []);
 
-const quote = useMemo(() => MOTIVATIONAL_QUOTES[todayIndex % MOTIVATIONAL_QUOTES.length], [todayIndex]);
-const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [todayIndex]);
-
+            const quote = useMemo(() => MOTIVATIONAL_QUOTES[todayIndex % MOTIVATIONAL_QUOTES.length], [todayIndex]);
+            const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [todayIndex]);
 
             const handleGoogleLogin = async () => {
                 try { await auth.signInWithPopup(googleProvider); } catch (err) { console.error("Login Error:", err); }
@@ -350,25 +1191,23 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
 
-                        useEffect(() => {
-    let interval;
-    if (isTimerRunning && timerSeconds > 0) {
-        interval = setInterval(() => setTimerSeconds(prev => prev - 1), 1000);
-    } else if (timerSeconds === 0 && isTimerRunning) {
-        setIsTimerRunning(false);
-        setIsAlarmPlaying(true); 
-        
-        // কন্টিনিউয়াস বিপ সাউন্ড শুরু
-        if (!alarmInterval.current) {
-            alarmInterval.current = setInterval(() => {
-                playBeep();
-            }, 1000);
-        }
-    }
-    return () => clearInterval(interval);
-}, [isTimerRunning, timerSeconds]);
+            useEffect(() => {
+                let interval;
+                if (isTimerRunning && timerSeconds > 0) {
+                    interval = setInterval(() => setTimerSeconds(prev => prev - 1), 1000);
+                } else if (timerSeconds === 0 && isTimerRunning) {
+                    setIsTimerRunning(false);
+                    setIsAlarmPlaying(true); 
+                    
+                    if (!alarmInterval.current) {
+                        alarmInterval.current = setInterval(() => {
+                            playBeep();
+                        }, 1000);
+                    }
+                }
+                return () => clearInterval(interval);
+            }, [isTimerRunning, timerSeconds]);
 
-            // কাউন্টডাউন ক্যালকুলেশন লজিক
             useEffect(() => {
                 const calculateTime = () => {
                     const now = new Date().getTime();
@@ -388,11 +1227,10 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                     });
                 };
 
-                calculateTime(); // শুরুতে একবার রান হবে
-                const timer = setInterval(calculateTime, 1000 * 60); // প্রতি এক মিনিটে আপডেট হবে
+                calculateTime();
+                const timer = setInterval(calculateTime, 1000 * 60);
                 return () => clearInterval(timer);
             }, [hscTarget, buetTarget]);
-
 
             const startTimer = (t) => {
                 setActiveTimer(t);
@@ -496,9 +1334,9 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                 <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
                     <div className="glass p-10 rounded-[2.5rem] text-center space-y-8 w-full max-w-sm">
                         <h1 className="text-4xl font-black italic uppercase tracking-tighter">BUET<span className="text-blue-500">TRACKER</span></h1>
-                        <p className="text-slate-400 text-sm">ডেটা সিঙ্ক করতে গুগল দিয়ে সাইন-ইন করুন।</p>
+                        <p className="text-slate-400 text-sm">ডেটা সিঙ্ক করতে গুগল দিয়ে সাইন-ইন করুন।</p>
                         <button onClick={handleGoogleLogin} className="w-full py-4 bg-white text-black rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-slate-200 transition-all">
-                            <Icon name="log-in" size={20} /> Google দিয়ে প্রবেশ করুন
+                            <Icon name="log-in" size={20} /> Google দিয়ে প্রবেশ করুন
                         </button>
                     </div>
                 </div>
@@ -535,21 +1373,21 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                         </div>
                         <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">এটাই <span className="text-blue-500">  বাস্তবতা</span></h1>
                         <div className="mb-2 h-8 flex items-center justify-center overflow-hidden">
-    <div className={`transition-all duration-1000 transform ${showMeaning ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-        {!showMeaning && (
-            <h2 className="text-lg font-bold text-blue-400 tracking-widest uppercase">
-                MD Faizur Rahman Labib
-            </h2>
-        )}
-    </div>
-    <div className={`absolute transition-all duration-1000 transform ${showMeaning ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-        {showMeaning && (
-            <h2 className="text-lg font-medium text-slate-300 italic">
-                "পরম দয়ালু আল্লাহর অনুগ্রহপ্রাপ্ত প্রখর মেধার অধিকারী ও অত্যন্ত বুদ্ধিমান ব্যক্তি যিনি সুদূরপ্রসারী চিন্তার অধিকারী"
-            </h2>
-        )}
-    </div>
-</div>
+                            <div className={`transition-all duration-1000 transform ${showMeaning ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
+                                {!showMeaning && (
+                                    <h2 className="text-lg font-bold text-blue-400 tracking-widest uppercase">
+                                        MD Faizur Rahman Labib
+                                    </h2>
+                                )}
+                            </div>
+                            <div className={`absolute transition-all duration-1000 transform ${showMeaning ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+                                {showMeaning && (
+                                    <h2 className="text-lg font-medium text-slate-300 italic">
+                                        "পরম দয়ালু আল্লাহর অনুগ্রহপ্রাপ্ত প্রখর মেধার অধিকারী ও অত্যন্ত বুদ্ধিমান ব্যক্তি যিনি সুদূরপ্রসারী চিন্তার অধিকারী"
+                                    </h2>
+                                )}
+                            </div>
+                        </div>
                         <div className="glass px-4 py-2 rounded-xl inline-flex items-center gap-2 max-w-[90%] mx-auto">
                             <Icon name="quote" size={14} className="text-blue-500 shrink-0" />
                             <p className="text-slate-400 italic text-xs md:text-sm truncate">{quote}</p>
@@ -578,7 +1416,7 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                                 <div className="py-4 animate-in fade-in zoom-in duration-500 space-y-6">
                                     <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-xl font-black ${todayStatus === 'yes' ? 'bg-green-600' : 'bg-red-600'}`}>
                                         <Icon name={todayStatus === 'yes' ? 'check-circle' : 'x-circle'} />
-                                        {todayStatus === 'yes' ? 'হ্যাঁ, দিয়েছি!' : 'না, আমি অলস।'}
+                                        {todayStatus === 'yes' ? 'হ্যাঁ, দিয়েছি!' : 'না, আমি অলস।'}
                                     </div>
                                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-4 italic text-blue-400 text-sm md:text-base">"{randomAyat}"</div>
                                 </div>
@@ -629,32 +1467,30 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                             <button onClick={addCustomTimer} className="text-blue-500"><Icon name="plus-circle" size={18} /></button>
                         </div>
                         
-                                             {activeTimer && (
-    <div className={`border-2 rounded-2xl p-6 mb-4 text-center transition-all duration-300 ${isAlarmPlaying ? 'bg-red-600/40 border-red-500 animate-pulse' : 'bg-blue-600/20 border-blue-500/30'}`}>
-        <p className="text-xs font-bold text-blue-400 uppercase mb-1">{activeTimer.label}</p>
-        
-        {isAlarmPlaying ? (
-            <div className="py-2">
-                <p className="text-2xl font-black text-white glow-text mb-4 uppercase italic">Time's Up! Focus!</p>
-                <button onClick={stopAlarm} className="bg-white text-red-600 px-8 py-3 rounded-xl font-black shadow-lg neo-button">
-                    STOP ALARM
-                </button>
-            </div>
-        ) : (
-            <>
-                <p className="text-5xl font-mono font-black mb-4">{formatTime(timerSeconds)}</p>
-                <div className="flex justify-center gap-3">
-                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="bg-blue-600 px-6 py-2 rounded-xl font-bold">
-                        {isTimerRunning ? 'Pause' : 'Resume'}
-                    </button>
-                    <button onClick={() => {setIsTimerRunning(false); setTimerSeconds(0); setActiveTimer(null);}} className="bg-slate-800 px-6 py-2 rounded-xl font-bold">Stop</button>
-                </div>
-            </>
-        )}
-    </div>
-)}
-
-
+                        {activeTimer && (
+                            <div className={`border-2 rounded-2xl p-6 mb-4 text-center transition-all duration-300 ${isAlarmPlaying ? 'bg-red-600/40 border-red-500 animate-pulse' : 'bg-blue-600/20 border-blue-500/30'}`}>
+                                <p className="text-xs font-bold text-blue-400 uppercase mb-1">{activeTimer.label}</p>
+                                
+                                {isAlarmPlaying ? (
+                                    <div className="py-2">
+                                        <p className="text-2xl font-black text-white glow-text mb-4 uppercase italic">Time's Up! Focus!</p>
+                                        <button onClick={stopAlarm} className="bg-white text-red-600 px-8 py-3 rounded-xl font-black shadow-lg neo-button">
+                                            STOP ALARM
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-5xl font-mono font-black mb-4">{formatTime(timerSeconds)}</p>
+                                        <div className="flex justify-center gap-3">
+                                            <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="bg-blue-600 px-6 py-2 rounded-xl font-bold">
+                                                {isTimerRunning ? 'Pause' : 'Resume'}
+                                            </button>
+                                            <button onClick={() => {setIsTimerRunning(false); setTimerSeconds(0); setActiveTimer(null);}} className="bg-slate-800 px-6 py-2 rounded-xl font-bold">Stop</button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex gap-2 overflow-x-auto pb-2 scroll-hide">
                             {timers.map(t => (
@@ -748,7 +1584,7 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                                     <button onClick={() => setShowNoteModal(false)} className="p-2 text-slate-400"><Icon name="x" /></button>
                                 </div>
                                 <div className="flex gap-2">
-                                    <input type="text" value={newNote} onChange={e => setNewNote(e.target.value)} onKeyPress={e => e.key === 'Enter' && addNote()} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm outline-none" placeholder="পড়ার লক্ষ্য..." />
+                                    <input type="text" value={newNote} onChange={e => setNewNote(e.target.value)} onKeyPress={e => e.key === 'Enter' && addNote()} className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm outline-none" placeholder="পড়ার লক্ষ্য..." />
                                     <button onClick={addNote} className="bg-blue-600 p-3 rounded-xl"><Icon name="plus" /></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-2">
@@ -782,14 +1618,18 @@ const randomAyat = useMemo(() => QURAN_AYATS[todayIndex % QURAN_AYATS.length], [
                     )}
 
                     <footer className="text-center py-10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
-                        বুয়েট অথবা কিছুই না - পড় নাইলে মর
+                        বুয়েট অথবা কিছুই না - পড় নাইলে মর
                     </footer>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // Initialize React app when RT module is active
+        window.addEventListener('load', () => {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+        });
     </script>
 </body>
 </html>
+
