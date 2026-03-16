@@ -1032,7 +1032,7 @@
                         <i data-lucide="zap" class="w-7 h-7 text-white"></i>
                     </div>
                     <div class="hidden lg:block">
-                        <h1 class="font-black text-xl tracking-tighter leading-none">SYNC PRO</h1>
+                        <h1 class="font-black text-xl tracking-tighter leading-none">Memory</h1>
                         <span class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Neural Brain Tool</span>
                     </div>
                 </div>
@@ -1297,6 +1297,20 @@
                             if (offlineId && offlineId.startsWith('offline_')) {
                                 idMappings.set(offlineId, newRef.key);
                                 console.log('ID mapping:', offlineId, '->', newRef.key);
+                                
+                                // Update local topics array with new Firebase ID
+                                const topicIndex = topics.findIndex(t => t.id === offlineId);
+                                if (topicIndex !== -1) {
+                                    topics[topicIndex].id = newRef.key;
+                                    console.log('Updated local topic ID:', offlineId, '->', newRef.key);
+                                }
+                                
+                                // Remove from offlineTopics store and add to regular topics
+                                if (db) {
+                                    const offlineTransaction = db.transaction(['offlineTopics'], 'readwrite');
+                                    const offlineStore = offlineTransaction.objectStore('offlineTopics');
+                                    offlineStore.delete(offlineId);
+                                }
                             }
                             break;
                             
@@ -1344,6 +1358,9 @@
                     console.error('Failed to sync item:', item, error);
                 }
             }
+            
+            // Force re-render to show updated IDs
+            render();
             
             showNotification('ডেটা সিঙ্ক সম্পন্ন', 'অফলাইন ডেটা সফলভাবে আপলোড হয়েছে!');
         };
@@ -2118,20 +2135,23 @@ function updateTopicOffline(id, updates) {
     const topic = topics.find(t => t.id === id);
     if (!topic || !confirm(`"${topic.name}" মুছে ফেলতে চান?`)) return;
 
-    // Check if this is an offline-created topic
-    if (id.startsWith('offline_')) {
-        // Remove from local topics array
-        topics = topics.filter(t => t.id !== id);
-        
-        // Remove from IndexedDB offlineTopics store
+    if (isOnline) {
+        // Online: Delete from Firebase directly
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
+            .then(() => {
+                addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted");
+                // Remove from local array immediately for better UX
+                topics = topics.filter(t => t.id !== id);
+                render();
+                updateSidebarStats();
+            })
+            .catch((error) => {
+                console.error('Failed to delete topic:', error);
+                showNotification('ত্রুটি', 'টপিক মুছতে ব্যর্থ হয়েছে');
+            });
+    } else {
+        // Offline: Queue for later sync
         if (db) {
-            const transaction = db.transaction(['offlineTopics'], 'readwrite');
-            const store = transaction.objectStore('offlineTopics');
-            store.delete(id);
-        }
-        
-        // Queue the deletion for sync (in case it was already synced to Firebase)
-        if (db && isOnline) {
             const transaction = db.transaction(['offlineQueue'], 'readwrite');
             const store = transaction.objectStore('offlineQueue');
             store.add({
@@ -2142,36 +2162,19 @@ function updateTopicOffline(id, updates) {
             });
         }
         
-        // Add deletion log
-        addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted");
+        // Remove from local array
+        topics = topics.filter(t => t.id !== id);
         
-        // Update UI
+        // Remove from IndexedDB if it's an offline topic
+        if (id.startsWith('offline_') && db) {
+            const transaction = db.transaction(['offlineTopics'], 'readwrite');
+            const store = transaction.objectStore('offlineTopics');
+            store.delete(id);
+        }
+        
+        addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে (অফলাইন)", "deleted");
         render();
         updateSidebarStats();
-    } else {
-        // Firebase-synced topic - use existing Firebase deletion
-        if (isOnline) {
-            database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
-                .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
-        } else {
-            // Queue for later sync
-            if (db) {
-                const transaction = db.transaction(['offlineQueue'], 'readwrite');
-                const store = transaction.objectStore('offlineQueue');
-                store.add({
-                    action: 'deleteTopic',
-                    data: { id: id },
-                    timestamp: Date.now(),
-                    synced: false
-                });
-            }
-            
-            // Remove from local array
-            topics = topics.filter(t => t.id !== id);
-            addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে (অফলাইন)", "deleted");
-            render();
-            updateSidebarStats();
-        }
     }
 }
         function switchTab(tab) {
@@ -2227,7 +2230,7 @@ function updateTopicOffline(id, updates) {
                         <i data-lucide="zap" class="w-10 h-10 text-white"></i>
                     </div>
                     <div>
-                        <h2 class="text-3xl font-black text-slate-900 mb-2">SYNC PRO</h2>
+                        <h2 class="text-3xl font-black text-slate-900 mb-2">Memory</h2>
                         <p class="text-slate-500 font-bold">আপনার ডেটা সিঙ্ক করতে লগইন করুন</p>
                     </div>
                     <button onclick="handleGoogleLogin()" class="neu-button neu-button-primary w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-500 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl">
@@ -3286,6 +3289,10 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
