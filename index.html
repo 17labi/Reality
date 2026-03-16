@@ -1257,18 +1257,77 @@
         request.onsuccess = async () => {
             const queueItems = request.result.filter(item => !item.synced);
             
+            // Track ID mappings: offline_id -> firebase_id
+            const idMappings = new Map();
+            
+            // Track items to skip (deleted before sync)
+            const deletedOfflineIds = new Set();
+            
+            // First pass: identify deletions of offline items
+            for (const item of queueItems) {
+                if (item.action === 'deleteTopic' && item.data.id && item.data.id.startsWith('offline_')) {
+                    deletedOfflineIds.add(item.data.id);
+                }
+            }
+            
             for (const item of queueItems) {
                 try {
                     switch (item.action) {
                         case 'addTopic':
-                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push().set(item.data);
+                            // Skip if this offline item was deleted before sync
+                            if (item.data.id && item.data.id.startsWith('offline_') && deletedOfflineIds.has(item.data.id)) {
+                                console.log('Skipping add for deleted offline item:', item.data.id);
+                                // Mark as synced to remove from queue
+                                const updateTransaction = db.transaction(['offlineQueue'], 'readwrite');
+                                const updateStore = updateTransaction.objectStore('offlineQueue');
+                                item.synced = true;
+                                updateStore.put(item);
+                                continue;
+                            }
+                            
+                            // Add to Firebase and track ID mapping
+                            const offlineId = item.data.id;
+                            const topicData = { ...item.data };
+                            delete topicData.id; // Remove offline ID before pushing to Firebase
+                            
+                            const newRef = await database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push();
+                            await newRef.set(topicData);
+                            
+                            // Track mapping if this was an offline ID
+                            if (offlineId && offlineId.startsWith('offline_')) {
+                                idMappings.set(offlineId, newRef.key);
+                                console.log('ID mapping:', offlineId, '->', newRef.key);
+                            }
                             break;
+                            
                         case 'updateTopic':
-                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${item.data.id}`).update(item.data.updates);
+                            // Check if we need to use mapped ID
+                            let updateId = item.data.id;
+                            if (updateId && updateId.startsWith('offline_') && idMappings.has(updateId)) {
+                                updateId = idMappings.get(updateId);
+                            }
+                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${updateId}`).update(item.data.updates);
                             break;
+                            
                         case 'deleteTopic':
-                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${item.data.id}`).remove();
+                            // Check if this is an offline-created item
+                            let deleteId = item.data.id;
+                            if (deleteId && deleteId.startsWith('offline_')) {
+                                // Check if we have a Firebase ID mapping
+                                if (idMappings.has(deleteId)) {
+                                    deleteId = idMappings.get(deleteId);
+                                    await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${deleteId}`).remove();
+                                    console.log('Deleted synced offline item from Firebase:', deleteId);
+                                } else {
+                                    // Item was deleted before being synced to Firebase, already handled in addTopic
+                                    console.log('Offline item deleted before sync, no Firebase action needed:', deleteId);
+                                }
+                            } else {
+                                // Normal Firebase item deletion
+                                await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${deleteId}`).remove();
+                            }
                             break;
+                            
                         case 'addLog':
                             await database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).push().set(item.data);
                             break;
@@ -2064,11 +2123,23 @@ function updateTopicOffline(id, updates) {
         // Remove from local topics array
         topics = topics.filter(t => t.id !== id);
         
-        // Remove from IndexedDB
+        // Remove from IndexedDB offlineTopics store
         if (db) {
             const transaction = db.transaction(['offlineTopics'], 'readwrite');
             const store = transaction.objectStore('offlineTopics');
             store.delete(id);
+        }
+        
+        // Queue the deletion for sync (in case it was already synced to Firebase)
+        if (db && isOnline) {
+            const transaction = db.transaction(['offlineQueue'], 'readwrite');
+            const store = transaction.objectStore('offlineQueue');
+            store.add({
+                action: 'deleteTopic',
+                data: { id: id },
+                timestamp: Date.now(),
+                synced: false
+            });
         }
         
         // Add deletion log
@@ -2079,8 +2150,28 @@ function updateTopicOffline(id, updates) {
         updateSidebarStats();
     } else {
         // Firebase-synced topic - use existing Firebase deletion
-        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
-            .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
+        if (isOnline) {
+            database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).remove()
+                .then(() => addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে", "deleted"));
+        } else {
+            // Queue for later sync
+            if (db) {
+                const transaction = db.transaction(['offlineQueue'], 'readwrite');
+                const store = transaction.objectStore('offlineQueue');
+                store.add({
+                    action: 'deleteTopic',
+                    data: { id: id },
+                    timestamp: Date.now(),
+                    synced: false
+                });
+            }
+            
+            // Remove from local array
+            topics = topics.filter(t => t.id !== id);
+            addLog(topic.name, "রেকর্ড মুছে ফেলা হয়েছে (অফলাইন)", "deleted");
+            render();
+            updateSidebarStats();
+        }
     }
 }
         function switchTab(tab) {
@@ -3195,5 +3286,6 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
+
 
 
