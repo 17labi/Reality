@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6366f1">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Unified Tracker - Spaced Repetition & Reality Tracking</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Scientific spaced repetition and reality tracking app for BUET students">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Unified Tracker">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/uSp07zn.png">
+    <link rel="manifest" href="/manifest.json">
     
     <!-- CDN Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -290,7 +296,7 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">System Pulse</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="connection-status">System Pulse</span>
         </div>
     </div>
     <button onclick="toggleModal(true)" class="group bg-slate-900 hover:bg-indigo-600 text-white p-3.5 rounded-2xl shadow-xl transition-all duration-300 active:scale-90">
@@ -357,20 +363,214 @@
     
     const auth = firebase.auth();
     const database = firebase.database();
-    database.ref().keepSynced(true);
-
-
-// অফলাইন ডেটা পারসিস্টেন্স
-
-firebase.database().goOnline();
-
-// সার্ভিস ওয়ার্কার রেজিস্ট্রেশন
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
-    });
-}
     const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    // PWA and Offline Functionality
+    let isOnline = navigator.onLine;
+    let offlineQueue = [];
+    let db = null;
+
+    // Initialize IndexedDB for offline storage
+    function initOfflineDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('UnifiedTrackerOffline', 1);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                db = request.result;
+                resolve(db);
+            };
+            
+            request.onupgradeneeded = () => {
+                const database = request.result;
+                
+                // Create offline queue store
+                if (!database.objectStoreNames.contains('offlineQueue')) {
+                    const store = database.createObjectStore('offlineQueue', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                    store.createIndex('type', 'type', { unique: false });
+                }
+                
+                // Create offline topics store
+                if (!database.objectStoreNames.contains('offlineTopics')) {
+                    const topicsStore = database.createObjectStore('offlineTopics', { keyPath: 'id' });
+                    topicsStore.createIndex('createdAt', 'createdAt', { unique: false });
+                }
+                
+                // Create offline logs store
+                if (!database.objectStoreNames.contains('offlineLogs')) {
+                    const logsStore = database.createObjectStore('offlineLogs', { keyPath: 'id', autoIncrement: true });
+                    logsStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+            };
+        });
+    }
+
+    // Save data to offline queue
+    function saveToOfflineQueue(action, data) {
+        if (!db) return;
+        
+        const transaction = db.transaction(['offlineQueue'], 'readwrite');
+        const store = transaction.objectStore('offlineQueue');
+        
+        const queueItem = {
+            action: action,
+            data: data,
+            timestamp: Date.now(),
+            synced: false
+        };
+        
+        store.add(queueItem);
+        console.log('Saved to offline queue:', action, data);
+    }
+
+    // Save topics offline
+    function saveTopicsOffline(topicsData) {
+        if (!db) return;
+        
+        const transaction = db.transaction(['offlineTopics'], 'readwrite');
+        const store = transaction.objectStore('offlineTopics');
+        
+        topicsData.forEach(topic => {
+            store.put(topic);
+        });
+    }
+
+    // Load topics from offline storage
+    function loadTopicsOffline() {
+        return new Promise((resolve, reject) => {
+            if (!db) {
+                resolve([]);
+                return;
+            }
+            
+            const transaction = db.transaction(['offlineTopics'], 'readonly');
+            const store = transaction.objectStore('offlineTopics');
+            const request = store.getAll();
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Sync offline data when online
+    async function syncOfflineData() {
+        if (!db || !currentUser || !isOnline) return;
+        
+        const transaction = db.transaction(['offlineQueue'], 'readwrite');
+        const store = transaction.objectStore('offlineQueue');
+        const request = store.getAll();
+        
+        request.onsuccess = async () => {
+            const queueItems = request.result.filter(item => !item.synced);
+            
+            for (const item of queueItems) {
+                try {
+                    switch (item.action) {
+                        case 'addTopic':
+                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push().set(item.data);
+                            break;
+                        case 'updateTopic':
+                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${item.data.id}`).update(item.data.updates);
+                            break;
+                        case 'deleteTopic':
+                            await database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${item.data.id}`).remove();
+                            break;
+                        case 'addLog':
+                            await database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).push().set(item.data);
+                            break;
+                    }
+                    
+                    // Mark as synced
+                    const updateTransaction = db.transaction(['offlineQueue'], 'readwrite');
+                    const updateStore = updateTransaction.objectStore('offlineQueue');
+                    item.synced = true;
+                    updateStore.put(item);
+                    
+                    console.log('Synced offline item:', item.action);
+                } catch (error) {
+                    console.error('Failed to sync item:', item, error);
+                }
+            }
+            
+            showNotification('ডেটা সিঙ্ক সম্পন্ন', 'অফলাইন ডেটা সফলভাবে আপলোড হয়েছে!');
+        };
+    }
+
+    // Network status monitoring
+    window.addEventListener('online', () => {
+        isOnline = true;
+        updateConnectionStatus();
+        console.log('Back online - syncing data...');
+        syncOfflineData();
+        showNotification('ইন্টারনেট সংযোগ', 'অনলাইনে ফিরে এসেছেন। ডেটা সিঙ্ক করা হচ্ছে...');
+    });
+
+    window.addEventListener('offline', () => {
+        isOnline = false;
+        updateConnectionStatus();
+        console.log('Gone offline - will queue data');
+        showNotification('অফলাইন মোড', 'ইন্টারনেট সংযোগ নেই। ডেটা অফলাইনে সেভ হবে।');
+    });
+
+    // Update connection status indicator
+    function updateConnectionStatus() {
+        const statusElement = document.getElementById('connection-status');
+        if (statusElement) {
+            if (isOnline) {
+                statusElement.textContent = 'System Pulse';
+                statusElement.className = 'text-[9px] font-bold text-slate-400 uppercase tracking-widest';
+            } else {
+                statusElement.textContent = 'Offline Mode';
+                statusElement.className = 'text-[9px] font-bold text-orange-500 uppercase tracking-widest';
+            }
+        }
+    }
+
+    // Show notification
+    function showNotification(title, body) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, {
+                body: body,
+                icon: 'https://i.imgur.com/uSp07zn.png',
+                badge: 'https://i.imgur.com/uSp07zn.png'
+            });
+        }
+    }
+
+    // Request notification permission
+    function requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('SW registered: ', registration);
+                    
+                    // Listen for messages from service worker
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        if (event.data.type === 'SYNC_OFFLINE_DATA') {
+                            syncOfflineData();
+                        }
+                    });
+                })
+                .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        });
+    }
+
+    // Initialize offline database
+    initOfflineDB().then(() => {
+        console.log('Offline database initialized');
+        requestNotificationPermission();
+        updateConnectionStatus();
+    }).catch(console.error);
 
     function updateUserProfile() {
     const container = document.getElementById('user-profile-container');
@@ -439,17 +639,29 @@ function handleLogout() {
     }
 }
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
     currentUser = user;
     if (user) {
         initializeFirebaseListeners(user.uid);
         migrateLocalStorageToFirebase(user.uid);
+        // Sync any offline data
+        if (isOnline) {
+            setTimeout(syncOfflineData, 1000);
+        }
     } else {
         cleanupFirebaseListeners();
-        topics = [];
-        logs = [];
+        // Load offline data when not logged in
+        try {
+            const offlineTopics = await loadTopicsOffline();
+            topics = offlineTopics;
+            logs = []; // Load offline logs if needed
+        } catch (error) {
+            console.error('Failed to load offline data:', error);
+            topics = [];
+            logs = [];
+        }
     }
-    updateUserProfile(); // ADD THIS LINE
+    updateUserProfile();
     render();
 });
 
@@ -565,16 +777,57 @@ function migrateLocalStorageToFirebase(uid) {
         }
 
        function addLog(topicName, action, type) {
-    if (!currentUser) return;
-    database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).push().set({
+    const logData = {
         topicName, action, type,
         time: new Date().toLocaleString('bn-BD', { hour12: true }),
+        timestamp: Date.now()
+    };
+
+    if (currentUser && isOnline) {
+        // Online: Save to Firebase
+        database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).push().set({
+            ...logData,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).catch((error) => {
+            console.error("Log error:", error);
+            // If Firebase fails, save offline
+            addLogOffline(topicName, action, type);
+        });
+    } else {
+        // Offline: Save locally
+        addLogOffline(topicName, action, type);
+    }
+}
+
+function addLogOffline(topicName, action, type) {
+    const logData = {
+        id: 'offline_' + Date.now(),
+        topicName, action, type,
+        time: new Date().toLocaleString('bn-BD', { hour12: true }),
+        timestamp: Date.now()
+    };
+    
+    // Add to local logs array
+    logs.unshift(logData);
+    if (logs.length > 200) logs.pop();
+    
+    // Save to IndexedDB
+    if (db) {
+        const transaction = db.transaction(['offlineLogs'], 'readwrite');
+        const store = transaction.objectStore('offlineLogs');
+        store.add(logData);
+    }
+    
+    // Save to offline queue for sync
+    saveToOfflineQueue('addLog', {
+        topicName, action, type,
+        time: logData.time,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });
 }
 
       function addTopic(name, customDate = null) {
-    if (!name.trim() || !currentUser) return;
+    if (!name.trim()) return;
     
     const createdAt = customDate ? new Date(customDate).getTime() : Date.now();
     const topicData = {
@@ -585,15 +838,42 @@ function migrateLocalStorageToFirebase(uid) {
         createdAt: createdAt
     };
 
-    database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push().set(topicData)
-        .then(() => addLog(name, "নতুন রেকর্ড যোগ করা হয়েছে", "added"))
-        .catch((error) => {
-            console.error("Error:", error);
-            alert("টপিক যোগ করতে ব্যর্থ হয়েছে।");
-        });
+    if (currentUser && isOnline) {
+        // Online: Save to Firebase
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).push().set(topicData)
+            .then(() => addLog(name, "নতুন রেকর্ড যোগ করা হয়েছে", "added"))
+            .catch((error) => {
+                console.error("Error:", error);
+                // If Firebase fails, save offline
+                saveToOfflineQueue('addTopic', topicData);
+                addTopicOffline(topicData);
+                showNotification('অফলাইন সেভ', 'টপিক অফলাইনে সেভ হয়েছে');
+            });
+    } else {
+        // Offline: Save locally
+        topicData.id = 'offline_' + Date.now();
+        addTopicOffline(topicData);
+        saveToOfflineQueue('addTopic', topicData);
+        showNotification('অফলাইন মোড', 'টপিক অফলাইনে সেভ হয়েছে। অনলাইন হলে সিঙ্ক হবে।');
+    }
+}
+
+function addTopicOffline(topicData) {
+    // Add to local topics array
+    topics.unshift(topicData);
+    
+    // Save to IndexedDB
+    if (db) {
+        const transaction = db.transaction(['offlineTopics'], 'readwrite');
+        const store = transaction.objectStore('offlineTopics');
+        store.put(topicData);
+    }
+    
+    // Update UI
+    render();
+    updateSidebarStats();
 }
 function handleReview(id) {
-    if (!currentUser) return;
     const topic = topics.find(t => t.id === id);
     if (!topic) return;
 
@@ -601,11 +881,48 @@ function handleReview(id) {
     const newRevCount = topic.revCount + 1;
     const days = SCIENTIFIC_GAPS[Math.min(newRevCount, SCIENTIFIC_GAPS.length - 1)];
     
-    database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).update({
+    const updates = {
         revCount: newRevCount,
         startTime: now,
         nextDate: now + (days * 86400000)
-    }).then(() => addLog(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised"));
+    };
+
+    if (currentUser && isOnline) {
+        // Online: Update Firebase
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).update(updates)
+            .then(() => addLog(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised"))
+            .catch((error) => {
+                console.error("Error:", error);
+                // If Firebase fails, save offline
+                saveToOfflineQueue('updateTopic', { id: id, updates: updates });
+                updateTopicOffline(id, updates);
+            });
+    } else {
+        // Offline: Update locally
+        updateTopicOffline(id, updates);
+        saveToOfflineQueue('updateTopic', { id: id, updates: updates });
+        addLogOffline(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised");
+        showNotification('অফলাইন রিভিউ', 'রিভিশন অফলাইনে সেভ হয়েছে');
+    }
+}
+
+function updateTopicOffline(id, updates) {
+    // Update local topics array
+    const topicIndex = topics.findIndex(t => t.id === id);
+    if (topicIndex !== -1) {
+        Object.assign(topics[topicIndex], updates);
+        
+        // Save to IndexedDB
+        if (db) {
+            const transaction = db.transaction(['offlineTopics'], 'readwrite');
+            const store = transaction.objectStore('offlineTopics');
+            store.put(topics[topicIndex]);
+        }
+        
+        // Update UI
+        render();
+        updateSidebarStats();
+    }
 }
 
       function deleteTopic(id) {
@@ -1645,15 +1962,7 @@ function handleReview(id) {
             const root = ReactDOM.createRoot(document.getElementById('root'));
             root.render(<App />);
         });
-        
-        
-      if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered!', reg))
-            .catch(err => console.log('SW failed', err));
-    });
-}
-</script>
+    </script>
 </body>
 </html>
+
