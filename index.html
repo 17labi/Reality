@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Unified Tracker">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png">
     <link rel="manifest" href="/manifest.json">
     
     <!-- CDN Dependencies -->
@@ -55,18 +55,18 @@
         .global-tab-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 1rem 1.5rem;
+            padding: 0.5rem 1rem;
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             align-items: center;
             justify-content: center;
         }
         
         .global-tab-btn {
-            padding: 0.75rem 2rem;
-            border-radius: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
             font-weight: 700;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             cursor: pointer;
@@ -76,7 +76,32 @@
             color: rgba(255, 255, 255, 0.6);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.25rem;
+        }
+        
+        /* Hide emoji on mobile to save space */
+        .global-tab-btn span:first-child {
+            display: none;
+        }
+        
+        /* Desktop styles */
+        @media (min-width: 768px) {
+            .global-tab-container {
+                padding: 1rem 1.5rem;
+                gap: 1rem;
+            }
+            
+            .global-tab-btn {
+                padding: 0.75rem 2rem;
+                border-radius: 1rem;
+                font-size: 0.875rem;
+                gap: 0.5rem;
+            }
+            
+            /* Show emoji on desktop */
+            .global-tab-btn span:first-child {
+                display: inline;
+            }
         }
         
         .global-tab-btn:hover {
@@ -94,7 +119,14 @@
         
         .module-container {
             display: none;
-            padding-top: 80px;
+            padding-top: 60px;
+        }
+        
+        /* Desktop padding */
+        @media (min-width: 768px) {
+            .module-container {
+                padding-top: 80px;
+            }
         }
         
         .module-container.active {
@@ -608,8 +640,8 @@
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, {
                 body: body,
-                icon: 'https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png',
-                badge: 'https://i.postimg.cc/TYHBdFH8/Gemini-Generated-Image-hf8x9dhf8x9dhf8x.png'
+                icon: 'https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png',
+                badge: 'https://i.postimg.cc/632FV6Pt/Gemini-Generated-Image-rqluzxrqluzxrqlu-removebg-preview.png'
             });
         }
     }
@@ -874,10 +906,18 @@ function migrateLocalStorageToFirebase(uid) {
                 // Overdue - battery should be 0
                 battery = 0;
             } else {
-                // Calculate battery based on remaining time vs total interval
-                const totalIntervalMs = currentGapDays * 86400000;
-                battery = Math.round((remainingMs / totalIntervalMs) * 100);
-                battery = Math.max(0, Math.min(100, battery));
+                // Special case: revCount = 0 (newly added topic)
+                if (topic.revCount === 0 || currentGapDays === 0) {
+                    // For new topics, use 1 day as the interval
+                    const totalIntervalMs = 86400000; // 1 day in milliseconds
+                    battery = Math.round((remainingMs / totalIntervalMs) * 100);
+                    battery = Math.max(0, Math.min(100, battery));
+                } else {
+                    // Calculate battery based on remaining time vs total interval
+                    const totalIntervalMs = currentGapDays * 86400000;
+                    battery = Math.round((remainingMs / totalIntervalMs) * 100);
+                    battery = Math.max(0, Math.min(100, battery));
+                }
             }
 
             // Color coding based on battery level
@@ -1147,8 +1187,20 @@ function updateTopicOffline(id, updates) {
         }
 
         function updateSidebarStats() {
-            const avg = topics.length ? Math.round(topics.reduce((acc, t) => acc + calculateMetrics(t).brainSave, 0) / topics.length) : 0;
-            document.getElementById('sidebar-retention-fill').style.width = `${avg}%`;
+            if (!topics || topics.length === 0) {
+                document.getElementById('sidebar-retention-fill').style.width = '0%';
+                return;
+            }
+            
+            const avg = Math.round(topics.reduce((acc, t) => {
+                const metrics = calculateMetrics(t);
+                return acc + (metrics ? metrics.brainSave : 0);
+            }, 0) / topics.length);
+            
+            const fillElement = document.getElementById('sidebar-retention-fill');
+            if (fillElement) {
+                fillElement.style.width = `${avg}%`;
+            }
         }
 
         // --- Render Functions ---
@@ -2219,6 +2271,8 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
+
+
 
 
 
