@@ -1555,6 +1555,9 @@ function updateTopicOffline(id, updates) {
             "Consistency is more important than Intensity অর্থাৎ, একদিন ১৮ ঘণ্টা পড়ার চেয়ে প্রতিদিন নিয়ম করে ১০ ঘণ্টা পড়াই হলো বুয়েট বা জীবনের যেকোনো বড় অর্জনের আসল চাবিকাঠি",
             "বুয়েট ক্যাম্পাস তোমার অপেক্ষায়।",
             "কষ্ট আজ করলে, মিষ্টি কাল হবে।",
+            "As You Sow,So Shall You Reap",
+            "BEAST MODE",
+            "হাল ছেড়ো না লেগে থাকো",
             "নিয়মিত পরিশ্রম মেধার চেয়েও বেশি শক্তিশালী।",
             "ইঞ্জিনিয়ারিং মানে শুধু ডিগ্রি না, এটা একটা চিন্তা-ধারা।",
             "Tough Time Creates a Tough Man",
@@ -1594,7 +1597,7 @@ function updateTopicOffline(id, updates) {
 
         // গ্লোবাল ট্র্যাকার
         const occupiedLanes = new Array(12).fill(false);
-        let activeNotesCount = 0;
+        let activeNotesCount = 0; // স্ক্রিনে বর্তমানে কয়টি নোট আছে তা ট্র্যাক করবে
 
         const FloatingNote = ({ text, index }) => {
             const noteRef = useRef(null);
@@ -1607,11 +1610,13 @@ function updateTopicOffline(id, updates) {
                 let isNoteActive = false;
 
                 const startFloating = () => {
-                    if (activeNotesCount >= 6) {
-                        setTimeout(startFloating, 2000 + Math.random() * 3000);
+                    // ১. স্ক্রিনে 3টির বেশি নোট থাকলে ওয়েট করবে
+                    if (activeNotesCount >= 3) {
+                        setTimeout(startFloating, 2000 + Math.random() * 3000); // ২-৫ সেকেন্ড পর আবার চেক করবে
                         return;
                     }
 
+                    // ২. খালি গলি খোঁজা
                     const availableLanes = occupiedLanes
                         .map((occ, i) => occ ? null : i)
                         .filter(i => i !== null);
@@ -1621,21 +1626,24 @@ function updateTopicOffline(id, updates) {
                         return;
                     }
 
+                    // ৩. নোট একটিভ করা এবং লেন দখল করা
                     const randomIdx = Math.floor(Math.random() * availableLanes.length);
                     currentLane = availableLanes[randomIdx];
                     occupiedLanes[currentLane] = true;
                     activeNotesCount++;
                     isNoteActive = true;
 
+                    // ৪. স্টাইল এবং পজিশন (গ্যাপ বাড়ানোর জন্য translateX এর শুরুটা দূরে রাখা হয়েছে)
                     const topPos = 12 + (currentLane * 7); 
                     element.style.top = `${topPos}%`;
                     element.style.visibility = 'visible';
 
-                    const duration = Math.floor(Math.random() * 40000) + 60000;
+                    // ৫. র্যান্ডম স্পিড
+                    const duration = Math.floor(Math.random() * 40000) + 60000; // ২০-৩০ সেকেন্ড
 
                     const animation = element.animate([
-                        { transform: 'translateX(120vw)' },
-                        { transform: 'translateX(-180vw)' }
+                        { transform: 'translateX(120vw)' }, // স্ক্রিনের অনেক বাইরে থেকে শুরু
+                        { transform: 'translateX(-180vw)' } // স্ক্রিন পুরোপুরি পার হওয়া
                     ], {
                         duration: duration,
                         easing: 'linear',
@@ -1643,17 +1651,23 @@ function updateTopicOffline(id, updates) {
                     });
 
                     animation.onfinish = () => {
+                        // ৬. রিসেট লজিক: স্ক্রিন পার হলে লেন এবং কাউন্ট খালি করে দেওয়া
                         if (currentLane !== -1) occupiedLanes[currentLane] = false;
                         if (isNoteActive) {
                             activeNotesCount--;
                             isNoteActive = false;
                         }
                         element.style.visibility = 'hidden';
+                        
+                        // নতুন সাইকেল শুরুর আগে র্যান্ডম গ্যাপ দেওয়া
                         setTimeout(startFloating, 1000 + Math.random() * 5000);
                     };
                 };
 
+                // শুরুতে সব নোট ইনভিজিবল থাকবে
                 element.style.visibility = 'hidden';
+                
+                // প্রথমবার একেকটি নোট একেক সময় ট্রাই করা শুরু করবে যাতে শুরুতে ধাক্কা না লাগে
                 const initialStartTimeout = setTimeout(startFloating, index * 3000);
 
                 return () => {
