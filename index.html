@@ -300,6 +300,10 @@
                         <i data-lucide="line-chart" class="w-4 h-4 md:w-5 md:h-5"></i>
                         <span class="text-[8px] md:text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">বিশ্লেষণ</span>
                     </button>
+                    <button onclick="switchTab('notes')" id="nav-notes" class="sidebar-item text-slate-500 flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 md:p-3 lg:p-4 rounded-xl md:rounded-2xl flex-1 md:flex-none">
+                        <i data-lucide="notebook" class="w-4 h-4 md:w-5 md:h-5"></i>
+                        <span class="text-[8px] md:text-[10px] lg:text-sm font-bold uppercase tracking-wide hidden md:block">নোটস</span>
+                    </button>
                 </nav>
 
                 <div class="hidden lg:block mt-auto p-4 bg-white/5 rounded-2xl border border-white/10">
@@ -358,10 +362,64 @@
                             <textarea id="modal-name" placeholder="বিস্তারিত লিখুন..." class="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-3xl outline-none text-base md:text-lg min-h-[120px] md:min-h-[140px] focus:ring-4 ring-indigo-50 transition-all"></textarea>
                         </div>
                         <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">বিষয় নির্বাচন করুন</label>
+                            <select id="modal-subject" class="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-3xl outline-none font-bn focus:ring-4 ring-indigo-50 transition-all">
+                                <option value="Math">গণিত (Math)</option>
+                                <option value="Physics">পদার্থবিজ্ঞান (Physics)</option>
+                                <option value="Chemistry">রসায়ন (Chemistry)</option>
+                                <option value="Biology">জীববিজ্ঞান (Biology)</option>
+                                <option value="Bangla">বাংলা (Bangla)</option>
+                                <option value="English">ইংরেজি (English)</option>
+                                <option value="ICT" selected>আইসিটি (ICT)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">কঠিনতা নির্বাচন করুন</label>
+                            <div class="flex gap-2">
+                                <button onclick="selectDifficulty('Easy')" id="diff-easy" class="flex-1 p-3 md:p-4 bg-emerald-50 border-2 border-emerald-200 rounded-xl md:rounded-2xl font-bold text-emerald-700 hover:bg-emerald-100 transition-all">সহজ (Easy)</button>
+                                <button onclick="selectDifficulty('Medium')" id="diff-medium" class="flex-1 p-3 md:p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl md:rounded-2xl font-bold text-yellow-700 hover:bg-yellow-100 transition-all active">মাঝারি (Medium)</button>
+                                <button onclick="selectDifficulty('Hard')" id="diff-hard" class="flex-1 p-3 md:p-4 bg-rose-50 border-2 border-rose-200 rounded-xl md:rounded-2xl font-bold text-rose-700 hover:bg-rose-100 transition-all">কঠিন (Hard)</button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
                             <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">পড়ার তারিখ</label>
                             <input id="modal-date" type="date" class="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-3xl outline-none font-mono focus:ring-4 ring-indigo-50 transition-all">
                         </div>
                         <button onclick="addTopicManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 md:py-5 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-indigo-200 transition-all active:scale-95">ডেটা সিঙ্ক করুন</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Rating Modal -->
+            <div id="review-modal" class="hidden fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100] flex items-center justify-center p-3 md:p-4">
+                <div class="bg-white w-full max-w-lg rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl font-bn border border-slate-100">
+                    <div class="flex justify-between items-center mb-6 md:mb-8">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">রিভিউ রেটিং দিন</h2>
+                            <p class="text-xs md:text-sm text-slate-400 font-bold" id="review-topic-name">টপিক নাম</p>
+                        </div>
+                        <button onclick="closeReviewModal()" class="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-5 h-5 md:w-6 md:h-6"></i></button>
+                    </div>
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">কঠিনতা নির্বাচন করুন (FSRS)</label>
+                            <div class="flex gap-2">
+                                <button onclick="selectReviewDifficulty('Easy')" id="review-diff-easy" class="flex-1 p-3 md:p-4 bg-emerald-50 border-2 border-emerald-200 rounded-xl md:rounded-2xl font-bold text-emerald-700 hover:bg-emerald-100 transition-all">সহজ<br/><span class="text-xs">(Easy)</span></button>
+                                <button onclick="selectReviewDifficulty('Medium')" id="review-diff-medium" class="flex-1 p-3 md:p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl md:rounded-2xl font-bold text-yellow-700 hover:bg-yellow-100 transition-all">মাঝারি<br/><span class="text-xs">(Medium)</span></button>
+                                <button onclick="selectReviewDifficulty('Hard')" id="review-diff-hard" class="flex-1 p-3 md:p-4 bg-rose-50 border-2 border-rose-200 rounded-xl md:rounded-2xl font-bold text-rose-700 hover:bg-rose-100 transition-all">কঠিন<br/><span class="text-xs">(Hard)</span></button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">আত্মবিশ্বাস রেটিং (SM-2)</label>
+                            <div class="flex gap-2">
+                                <button onclick="selectConfidenceRating(1)" id="conf-1" class="flex-1 p-3 md:p-4 bg-rose-50 border-2 border-rose-200 rounded-xl md:rounded-2xl font-bold text-rose-700 hover:bg-rose-100 transition-all text-sm">1<br/><span class="text-xs">ভুলে গেছি</span></button>
+                                <button onclick="selectConfidenceRating(2)" id="conf-2" class="flex-1 p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-xl md:rounded-2xl font-bold text-orange-700 hover:bg-orange-100 transition-all text-sm">2<br/><span class="text-xs">কঠিন</span></button>
+                                <button onclick="selectConfidenceRating(3)" id="conf-3" class="flex-1 p-3 md:p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl md:rounded-2xl font-bold text-yellow-700 hover:bg-yellow-100 transition-all text-sm">3<br/><span class="text-xs">মাঝারি</span></button>
+                                <button onclick="selectConfidenceRating(4)" id="conf-4" class="flex-1 p-3 md:p-4 bg-lime-50 border-2 border-lime-200 rounded-xl md:rounded-2xl font-bold text-lime-700 hover:bg-lime-100 transition-all text-sm">4<br/><span class="text-xs">ভালো</span></button>
+                                <button onclick="selectConfidenceRating(5)" id="conf-5" class="flex-1 p-3 md:p-4 bg-emerald-50 border-2 border-emerald-200 rounded-xl md:rounded-2xl font-bold text-emerald-700 hover:bg-emerald-100 transition-all text-sm">5<br/><span class="text-xs">পারফেক্ট</span></button>
+                            </div>
+                        </div>
+                        <button onclick="submitReview()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 md:py-5 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-indigo-200 transition-all active:scale-95">রিভিউ সম্পন্ন করুন</button>
                     </div>
                 </div>
             </div>
@@ -405,7 +463,7 @@
     // Initialize IndexedDB for offline storage
     function initOfflineDB() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('UnifiedTrackerOffline', 1);
+            const request = indexedDB.open('UnifiedTrackerOffline', 2);
             
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
@@ -413,8 +471,9 @@
                 resolve(db);
             };
             
-            request.onupgradeneeded = () => {
+            request.onupgradeneeded = (event) => {
                 const database = request.result;
+                const oldVersion = event.oldVersion;
                 
                 // Create offline queue store
                 if (!database.objectStoreNames.contains('offlineQueue')) {
@@ -433,6 +492,12 @@
                 if (!database.objectStoreNames.contains('offlineLogs')) {
                     const logsStore = database.createObjectStore('offlineLogs', { keyPath: 'id', autoIncrement: true });
                     logsStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+                
+                // Create offline notes store (version 2)
+                if (oldVersion < 2 && !database.objectStoreNames.contains('offlineNotes')) {
+                    const notesStore = database.createObjectStore('offlineNotes', { keyPath: 'id' });
+                    notesStore.createIndex('lastModified', 'lastModified', { unique: false });
                 }
             };
         });
@@ -603,6 +668,20 @@
             
             showNotification('ডেটা সিঙ্ক সম্পন্ন', 'অফলাইন ডেটা সফলভাবে আপলোড হয়েছে!');
         };
+        
+        // Sync notes from IndexedDB to Firebase
+        try {
+            const offlineNotes = await loadNotesOffline();
+            if (offlineNotes && offlineNotes.content) {
+                await database.ref(`users/${currentUser.uid}/spacedRepetition/notes`).set({
+                    content: offlineNotes.content,
+                    lastModified: offlineNotes.lastModified
+                });
+                console.log('Notes synced to Firebase');
+            }
+        } catch (error) {
+            console.error('Error syncing notes:', error);
+        }
     }
 
     // Network status monitoring
@@ -740,6 +819,292 @@ let currentTab = 'dashboard';
 let expandedTopics = new Set();
 const SCIENTIFIC_GAPS = [0, 1, 3, 7, 14, 30, 60, 90, 180, 365, 730, 1095];
 
+// Subject categories
+const SUBJECTS = ['Math', 'Physics', 'Chemistry', 'Biology', 'Bangla', 'English', 'ICT'];
+let currentSubject = localStorage.getItem('selectedSubject') || 'All';
+
+// Notes state management
+let notesContent = '';
+let notesLastSaved = null;
+let notesModified = false;
+
+// Algorithm selection (FSRS or SM2)
+let currentAlgorithm = localStorage.getItem('selectedAlgorithm') || 'FSRS';
+
+// ===== ALGORITHM MANAGER CLASS =====
+class AlgorithmManager {
+    constructor(algorithmType = 'FSRS') {
+        this.algorithmType = algorithmType; // 'SM2' or 'FSRS'
+    }
+
+    // Initialize new topic parameters
+    initializeTopic(difficulty) {
+        if (this.algorithmType === 'SM2') {
+            return { easeFactor: 2.5, revCount: 0 };
+        } else {
+            const stabilityMap = { Easy: 7, Medium: 3, Hard: 1 };
+            return { 
+                stability: stabilityMap[difficulty] || 3, 
+                lastReviewTime: Date.now(),
+                revCount: 0
+            };
+        }
+    }
+
+    // Calculate next review date
+    calculateNextReview(topic, rating) {
+        if (this.algorithmType === 'SM2') {
+            return this.calculateSM2(topic, rating);
+        } else {
+            return this.calculateFSRS(topic, rating);
+        }
+    }
+
+    calculateSM2(topic, confidenceRating) {
+        // SM-2 implementation
+        let newEF = (topic.easeFactor || 2.5) + (0.1 - (5 - confidenceRating) * (0.08 + (5 - confidenceRating) * 0.02));
+        newEF = Math.max(1.3, newEF);
+
+        let interval;
+        if (confidenceRating < 3) {
+            interval = 1; // Reset to 1 day for failed reviews
+        } else if (topic.revCount === 0) {
+            // First review: use the stored lastInterval and apply ease factor
+            const baseInterval = topic.lastInterval || 1;
+            interval = Math.round(baseInterval * newEF);
+        } else if (topic.revCount === 1) {
+            // Second review: use lastInterval * easeFactor, or default to 6
+            const prevInterval = topic.lastInterval || 1;
+            interval = Math.round(prevInterval * newEF);
+            interval = Math.max(interval, 6); // Ensure at least 6 days for second review
+        } else {
+            // Subsequent reviews: multiply previous interval by ease factor
+            const prevInterval = topic.lastInterval || 6;
+            interval = Math.round(prevInterval * newEF);
+        }
+
+        return {
+            easeFactor: newEF,
+            nextDate: Date.now() + (interval * 86400000),
+            revCount: confidenceRating >= 3 ? topic.revCount + 1 : 0,
+            startTime: Date.now(),
+            lastInterval: interval // Store this interval for next calculation
+        };
+    }
+
+    calculateFSRS(topic, difficulty) {
+        // FSRS implementation - Fixed formula
+        const multiplierMap = { Easy: 1.5, Medium: 1.2, Hard: 0.8 };
+        const newStability = (topic.stability || 3) * (multiplierMap[difficulty] || 1.2);
+
+        // Correct FSRS formula: R = e^(ln(0.9) × t/S)
+        // To find t when R drops to R_target:
+        // R_target = e^(ln(0.9) × t/S)
+        // ln(R_target) = ln(0.9) × t/S
+        // t = S × ln(R_target) / ln(0.9)
+        // 
+        // Since ln(0.9) ≈ -0.105 and ln(0.9) ≈ -0.105, they're both negative
+        // So: t = S × (-0.105) / (-0.105) = S (when R_target = 0.9)
+        const R_target = 0.9; // We want 90% retrievability at next review
+        const intervalDays = Math.round(newStability * Math.log(R_target) / Math.log(0.9));
+
+        return {
+            stability: newStability,
+            lastReviewTime: Date.now(),
+            nextDate: Date.now() + (intervalDays * 86400000),
+            revCount: topic.revCount + 1,
+            startTime: Date.now(),
+            lastInterval: intervalDays // Store this interval for consistency
+        };
+    }
+
+    // Calculate current retrievability
+    calculateRetrievability(topic) {
+        if (this.algorithmType !== 'FSRS' || !topic.stability) return null;
+
+        // For topics that have never been reviewed, calculate from when they were created/read
+        // For reviewed topics, calculate from last review time
+        const referenceTime = (topic.revCount === 0) ? (topic.createdAt || topic.startTime) : topic.lastReviewTime;
+        
+        if (!referenceTime) return null;
+
+        const elapsedDays = (Date.now() - referenceTime) / 86400000;
+        const R = Math.exp((Math.log(0.9) * elapsedDays) / topic.stability);
+        return Math.max(0, Math.min(100, Math.round(R * 100)));
+    }
+}
+
+// ===== SUBJECT FILTER MANAGER CLASS =====
+class SubjectFilterManager {
+    constructor() {
+        this.subjects = ['Math', 'Physics', 'Chemistry', 'Biology', 'Bangla', 'English', 'ICT'];
+        this.currentSubject = localStorage.getItem('selectedSubject') || 'All';
+        this.subjectCache = {}; // Cache loaded topics per subject
+        this.subjectLoadedCount = {}; // Track how many topics loaded per subject
+        this.subjectHasMore = {}; // Track if more topics available per subject
+        this.isLoading = false; // Loading state
+    }
+
+    setSubject(subject) {
+        this.currentSubject = subject;
+        localStorage.setItem('selectedSubject', subject);
+        currentSubject = subject; // Update global variable
+    }
+
+    getSubject() {
+        return this.currentSubject;
+    }
+
+    async loadTopicsForSubject(subject, limit = 50, loadMore = false) {
+        if (!currentUser || this.isLoading) return [];
+
+        this.isLoading = true;
+
+        try {
+            if (subject === 'All') {
+                return await this._loadAllTopics(limit, loadMore);
+            }
+
+            // If not loading more and we have cached data, return it
+            if (!loadMore && this.subjectCache[subject]) {
+                this.isLoading = false;
+                return this.subjectCache[subject];
+            }
+
+            // Initialize tracking for this subject if needed
+            if (!this.subjectLoadedCount[subject]) {
+                this.subjectLoadedCount[subject] = 0;
+            }
+
+            // Query Firebase with pagination
+            let query = database.ref(`users/${currentUser.uid}/spacedRepetition/topics`)
+                .orderByChild('subject')
+                .equalTo(subject)
+                .limitToFirst(limit + 1); // Load one extra to check if more exist
+
+            const snapshot = await query.once('value');
+            const topicsData = [];
+            snapshot.forEach(child => {
+                topicsData.push({ id: child.key, ...child.val() });
+            });
+
+            // Check if more topics exist
+            const hasMore = topicsData.length > limit;
+            if (hasMore) {
+                topicsData.pop(); // Remove the extra item
+            }
+
+            this.subjectHasMore[subject] = hasMore;
+
+            if (loadMore && this.subjectCache[subject]) {
+                // Append new topics to existing cache
+                const existingIds = new Set(this.subjectCache[subject].map(t => t.id));
+                const newTopics = topicsData.filter(t => !existingIds.has(t.id));
+                this.subjectCache[subject] = [...this.subjectCache[subject], ...newTopics];
+            } else {
+                // Initial load - cache results
+                this.subjectCache[subject] = topicsData;
+            }
+
+            this.subjectLoadedCount[subject] = this.subjectCache[subject].length;
+
+            this.isLoading = false;
+            return this.subjectCache[subject];
+        } catch (error) {
+            console.error('Error loading topics for subject:', error);
+            this.isLoading = false;
+            return this.subjectCache[subject] || [];
+        }
+    }
+
+    async _loadAllTopics(limit, loadMore) {
+        if (!currentUser) return [];
+
+        // For "All" subjects, use the existing global topics array
+        // This maintains backward compatibility with the current implementation
+        return topics;
+    }
+
+    hasMoreTopics(subject) {
+        return this.subjectHasMore[subject] || false;
+    }
+
+    getLoadedCount(subject) {
+        return this.subjectLoadedCount[subject] || 0;
+    }
+
+    clearCache() {
+        this.subjectCache = {};
+        this.subjectLoadedCount = {};
+        this.subjectHasMore = {};
+    }
+
+    clearSubjectCache(subject) {
+        delete this.subjectCache[subject];
+        delete this.subjectLoadedCount[subject];
+        delete this.subjectHasMore[subject];
+    }
+}
+
+// ===== MIGRATION MANAGER CLASS =====
+class MigrationManager {
+    async migrateExistingTopics(topicsArray) {
+        const migratedTopics = [];
+
+        for (const topic of topicsArray) {
+            const migrated = { ...topic };
+
+            // Add subject if missing
+            if (!migrated.subject) {
+                migrated.subject = 'ICT'; // Default category
+                migrated.needsSubjectUpdate = true;
+            }
+
+            // Add SM-2 parameters if missing
+            if (migrated.easeFactor === undefined) {
+                migrated.easeFactor = 2.5;
+            }
+
+            // Add FSRS parameters if missing
+            if (migrated.stability === undefined) {
+                // Derive stability from existing interval
+                const intervalDays = (migrated.nextDate - migrated.startTime) / 86400000;
+                migrated.stability = Math.max(1, intervalDays);
+                migrated.lastReviewTime = migrated.startTime;
+            }
+
+            // Initialize review history if missing
+            if (!migrated.reviewHistory) {
+                migrated.reviewHistory = [];
+            }
+
+            migratedTopics.push(migrated);
+        }
+
+        return migratedTopics;
+    }
+
+    async saveMigratedTopics(topicsArray) {
+        if (!currentUser) return;
+
+        const updates = {};
+        for (const topic of topicsArray) {
+            if (topic.id && !topic.id.startsWith('offline_')) {
+                updates[`users/${currentUser.uid}/spacedRepetition/topics/${topic.id}`] = topic;
+            }
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await database.ref().update(updates);
+        }
+    }
+}
+
+// Initialize managers
+let algorithmManager = new AlgorithmManager(currentAlgorithm);
+let subjectFilterManager = new SubjectFilterManager();
+let migrationManager = new MigrationManager();
+
         function handleGoogleLogin() {
     auth.signInWithPopup(googleProvider)
         .catch((error) => {
@@ -759,6 +1124,15 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
         initializeFirebaseListeners(user.uid);
         migrateLocalStorageToFirebase(user.uid);
+        
+        // Run migration for existing topics
+        if (topics.length > 0) {
+            const migratedTopics = await migrationManager.migrateExistingTopics(topics);
+            topics = migratedTopics;
+            await migrationManager.saveMigratedTopics(migratedTopics);
+            render();
+        }
+        
         // Sync any offline data
         if (isOnline) {
             setTimeout(syncOfflineData, 1000);
@@ -768,7 +1142,8 @@ auth.onAuthStateChanged(async (user) => {
         // Load offline data when not logged in
         try {
             const offlineTopics = await loadTopicsOffline();
-            topics = offlineTopics;
+            const migratedTopics = await migrationManager.migrateExistingTopics(offlineTopics);
+            topics = migratedTopics;
             logs = []; // Load offline logs if needed
         } catch (error) {
             console.error('Failed to load offline data:', error);
@@ -788,14 +1163,23 @@ let allTopicsLoaded = false;
 let currentDisplayPage = 1;
 const itemsPerPage = 50;
 
+// History logs pagination state
+let logsPageSize = 50;
+let logsLoadedCount = 50;
+let allLogsLoaded = false;
+
 function initializeFirebaseListeners(uid) {
     // Use limitToLast for pagination - load most recent topics first
     topicsListener = database.ref(`users/${uid}/spacedRepetition/topics`)
         .orderByChild('createdAt')
         .limitToLast(topicsPageSize)
-        .on('value', (snapshot) => {
+        .on('value', async (snapshot) => {
             const data = snapshot.val();
-            topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            let loadedTopics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            
+            // Run migration on loaded topics
+            loadedTopics = await migrationManager.migrateExistingTopics(loadedTopics);
+            topics = loadedTopics;
             
             // Check if we've loaded all topics
             allTopicsLoaded = topics.length < topicsPageSize;
@@ -804,14 +1188,24 @@ function initializeFirebaseListeners(uid) {
             updateSidebarStats();
         });
 
-    logsListener = database.ref(`users/${uid}/spacedRepetition/logs`).limitToLast(200).on('value', (snapshot) => {
-        const data = snapshot.val();
-        logs = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) : [];
-        if (currentTab === 'history') render();
-    });
+    logsListener = database.ref(`users/${uid}/spacedRepetition/logs`)
+        .orderByChild('timestamp')
+        .limitToLast(logsLoadedCount)
+        .on('value', (snapshot) => {
+            const data = snapshot.val();
+            logs = data ? Object.keys(data)
+                .map(key => ({ id: key, ...data[key] }))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) 
+                : [];
+            
+            // Check if all logs loaded
+            allLogsLoaded = logs.length < logsLoadedCount;
+            
+            if (currentTab === 'history') render();
+        });
 }
 
-// Load more topics function for pagination
+// Load more topics function for pagination (legacy - for "All" subjects)
 function loadMoreTopics() {
     if (!currentUser || allTopicsLoaded) return;
     
@@ -826,14 +1220,92 @@ function loadMoreTopics() {
     topicsListener = database.ref(`users/${currentUser.uid}/spacedRepetition/topics`)
         .orderByChild('createdAt')
         .limitToLast(topicsLoadedCount)
-        .on('value', (snapshot) => {
+        .on('value', async (snapshot) => {
             const data = snapshot.val();
-            topics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            let loadedTopics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+            
+            // Run migration on loaded topics
+            loadedTopics = await migrationManager.migrateExistingTopics(loadedTopics);
+            topics = loadedTopics;
             
             allTopicsLoaded = topics.length < topicsLoadedCount;
             
             render();
             updateSidebarStats();
+        });
+}
+
+// Load more topics for specific subject (new pagination system)
+async function loadMoreTopicsForSubject() {
+    if (!currentUser || subjectFilterManager.isLoading) return;
+    
+    const subject = subjectFilterManager.getSubject();
+    
+    // Show loading indicator
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> <span>Loading...</span>';
+        loadMoreBtn.disabled = true;
+    }
+    
+    try {
+        // Load more topics for the current subject
+        await subjectFilterManager.loadTopicsForSubject(subject, 50, true);
+        
+        // Re-render to show new topics
+        render();
+    } catch (error) {
+        console.error('Error loading more topics:', error);
+        alert('Failed to load more topics. Please try again.');
+    } finally {
+        // Reset button state
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+        }
+    }
+}
+
+// Load more logs function for history tab pagination
+function loadMoreLogs() {
+    if (!currentUser || allLogsLoaded) return;
+    
+    // Show loading state
+    const btn = document.getElementById('load-more-logs-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> <span>লোড হচ্ছে...</span>';
+    }
+    
+    // Increase load count
+    logsLoadedCount += 50;
+    
+    // Cleanup old listener
+    if (logsListener) {
+        database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).off('value', logsListener);
+    }
+    
+    // Create new listener with increased limit
+    logsListener = database.ref(`users/${currentUser.uid}/spacedRepetition/logs`)
+        .orderByChild('timestamp')
+        .limitToLast(logsLoadedCount)
+        .on('value', (snapshot) => {
+            const data = snapshot.val();
+            logs = data ? Object.keys(data)
+                .map(key => ({ id: key, ...data[key] }))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) 
+                : [];
+            
+            // Check if all logs loaded
+            allLogsLoaded = logs.length < logsLoadedCount;
+            
+            // Re-render
+            render();
+            
+            // Reset button
+            if (btn) {
+                btn.disabled = false;
+                lucide.createIcons();
+            }
         });
 }
 
@@ -895,46 +1367,75 @@ function migrateLocalStorageToFirebase(uid) {
             const totalCycleMs = nextGapDays * 86400000;
             const remainingMs = topic.nextDate - now;
 
+            // Calculate Retrievability using AlgorithmManager
+            let retrievability = algorithmManager.calculateRetrievability(topic);
+            if (retrievability === null) {
+                // Fallback calculation if FSRS data not available
+                if (topic.stability && topic.lastReviewTime) {
+                    const elapsedDays = (now - topic.lastReviewTime) / 86400000;
+                    const R = Math.exp((Math.log(0.9) * elapsedDays) / topic.stability);
+                    retrievability = Math.max(0, Math.min(100, Math.round(R * 100)));
+                } else {
+                    retrievability = 100;
+                }
+            }
+
             const baseRetention = 80 + (topic.revCount * 4);
             const stabilityFactor = Math.max(24, currentGapDays * 24 * (1 + topic.revCount * 0.5));
             const currentRetention = baseRetention * Math.exp(-elapsedHours / stabilityFactor);
             const brainSave = Math.max(5, Math.min(100, Math.round(currentRetention)));
 
-            // Fixed battery calculation - should be based on time until next review
+            // Fixed battery calculation - based on actual interval from last review
             let battery = 100;
             if (remainingMs <= 0) {
                 // Overdue - battery should be 0
                 battery = 0;
             } else {
-                // Special case: revCount = 0 (newly added topic)
-                if (topic.revCount === 0 || currentGapDays === 0) {
-                    // For new topics, use 1 day as the interval
-                    const totalIntervalMs = 86400000; // 1 day in milliseconds
-                    battery = Math.round((remainingMs / totalIntervalMs) * 100);
-                    battery = Math.max(0, Math.min(100, battery));
-                } else {
-                    // Calculate battery based on remaining time vs total interval
-                    const totalIntervalMs = currentGapDays * 86400000;
-                    battery = Math.round((remainingMs / totalIntervalMs) * 100);
-                    battery = Math.max(0, Math.min(100, battery));
-                }
+                // Calculate total interval: from startTime (last review) to nextDate
+                const totalIntervalMs = topic.nextDate - topic.startTime;
+                
+                // Calculate elapsed time since last review
+                const elapsedSinceReview = now - topic.startTime;
+                
+                // Battery = remaining time / total interval
+                // This way battery starts at 100% after review and decreases to 0% at nextDate
+                battery = Math.round((remainingMs / totalIntervalMs) * 100);
+                battery = Math.max(0, Math.min(100, battery));
             }
 
-            // Color coding based on battery level
+            // Color coding for battery bar (time-based)
             let color = 'bg-emerald-500';
-            let textColor = 'text-emerald-600';
             if (battery <= 0) { 
                 color = 'bg-rose-500'; 
-                textColor = 'text-rose-600'; 
             } else if (battery < 25) { 
                 color = 'bg-red-500'; 
-                textColor = 'text-red-600'; 
             } else if (battery < 50) { 
                 color = 'bg-orange-500'; 
-                textColor = 'text-orange-600'; 
             } else if (battery < 75) { 
                 color = 'bg-yellow-500'; 
+            }
+            
+            // Color coding for retrievability percentage (memory strength)
+            let textColor = 'text-emerald-600';
+            let circleBgColor = 'bg-emerald-50';
+            let circleBorderColor = 'border-emerald-200';
+            
+            if (retrievability <= 10) { 
+                textColor = 'text-rose-600'; 
+                circleBgColor = 'bg-rose-50';
+                circleBorderColor = 'border-rose-200';
+            } else if (retrievability < 30) { 
+                textColor = 'text-red-600'; 
+                circleBgColor = 'bg-red-50';
+                circleBorderColor = 'border-red-200';
+            } else if (retrievability < 50) { 
+                textColor = 'text-orange-600'; 
+                circleBgColor = 'bg-orange-50';
+                circleBorderColor = 'border-orange-200';
+            } else if (retrievability < 70) { 
                 textColor = 'text-yellow-600'; 
+                circleBgColor = 'bg-yellow-50';
+                circleBorderColor = 'border-yellow-200';
             }
 
             let timerStr = "এখনই রিভাইজ দিন";
@@ -945,7 +1446,14 @@ function migrateLocalStorageToFirebase(uid) {
             }
 
             return {
-                battery, color, textColor, brainSave, isDue: now >= topic.nextDate,
+                battery, 
+                retrievability,
+                color, 
+                textColor,
+                circleBgColor,
+                circleBorderColor,
+                brainSave, 
+                isDue: now >= topic.nextDate || retrievability < 10,
                 timerStr,
                 addedStr: new Date(topic.createdAt).toLocaleDateString('bn-BD'),
                 nextDateStr: new Date(topic.nextDate).toLocaleDateString('bn-BD', {
@@ -1006,17 +1514,69 @@ function addLogOffline(topicName, action, type) {
     });
 }
 
-      function addTopic(name, customDate = null) {
+      function addTopic(name, customDate = null, subject = 'ICT', difficulty = 'Medium') {
     if (!name.trim()) return;
     
     const createdAt = customDate ? new Date(customDate).getTime() : Date.now();
+    
+    console.log('=== ADD TOPIC DEBUG START ===');
+    console.log('Input:', {
+        name: name.trim(),
+        customDate: customDate,
+        createdAt: new Date(createdAt).toLocaleString(),
+        difficulty: difficulty,
+        now: new Date(Date.now()).toLocaleString()
+    });
+    
+    // Initialize topic parameters using AlgorithmManager
+    const algorithmParams = algorithmManager.initializeTopic(difficulty);
+    
+    // Calculate initial interval based on stability (FSRS approach)
+    const stabilityMap = { Easy: 7, Medium: 3, Hard: 1 };
+    const initialStability = stabilityMap[difficulty] || 3;
+    const initialInterval = initialStability; // First review should be after stability days
+    
+    // Calculate nextDate from createdAt (when you first read it)
+    let nextDate = createdAt + (initialInterval * 86400000);
+    
+    console.log('Initial calculation:', {
+        initialStability: initialStability,
+        initialInterval: initialInterval + ' days',
+        nextDateFromCreatedAt: new Date(nextDate).toLocaleString(),
+        isInPast: nextDate < Date.now(),
+        daysOverdue: nextDate < Date.now() ? ((Date.now() - nextDate) / 86400000).toFixed(1) : 0
+    });
+    
+    // DON'T recalculate if in the past - this preserves the natural review schedule
+    // The topic is simply overdue and should be reviewed now
+    // The UI will show it as overdue with low retrievability
+    
     const topicData = {
         name: name.trim(),
-        revCount: 0,
+        subject: subject,
+        difficulty: difficulty, // Store difficulty field
+        revCount: algorithmParams.revCount || 0,
         startTime: createdAt,
-        nextDate: createdAt + 86400000,
-        createdAt: createdAt
+        nextDate: nextDate, // Keep the original schedule, even if in the past
+        createdAt: createdAt,
+        easeFactor: algorithmParams.easeFactor || 2.5,
+        stability: algorithmParams.stability || 3,
+        lastReviewTime: algorithmParams.lastReviewTime || createdAt,
+        lastInterval: initialInterval, // Store initial interval
+        reviewHistory: []
     };
+    
+    console.log('Final topicData:', {
+        startTime: new Date(topicData.startTime).toLocaleString(),
+        nextDate: new Date(topicData.nextDate).toLocaleString(),
+        isOverdue: topicData.nextDate < Date.now(),
+        daysOverdue: topicData.nextDate < Date.now() ? ((Date.now() - topicData.nextDate) / 86400000).toFixed(1) : 0,
+        stability: topicData.stability,
+        easeFactor: topicData.easeFactor,
+        lastInterval: topicData.lastInterval,
+        revCount: topicData.revCount
+    });
+    console.log('=== ADD TOPIC DEBUG END ===');
 
     if (currentUser && isOnline) {
         // Online: Save to Firebase
@@ -1054,36 +1614,8 @@ function addTopicOffline(topicData) {
     updateSidebarStats();
 }
 function handleReview(id) {
-    const topic = topics.find(t => t.id === id);
-    if (!topic) return;
-
-    const now = Date.now();
-    const newRevCount = topic.revCount + 1;
-    const days = SCIENTIFIC_GAPS[Math.min(newRevCount, SCIENTIFIC_GAPS.length - 1)];
-    
-    const updates = {
-        revCount: newRevCount,
-        startTime: now,
-        nextDate: now + (days * 86400000)
-    };
-
-    if (currentUser && isOnline) {
-        // Online: Update Firebase
-        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${id}`).update(updates)
-            .then(() => addLog(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised"))
-            .catch((error) => {
-                console.error("Error:", error);
-                // If Firebase fails, save offline
-                saveToOfflineQueue('updateTopic', { id: id, updates: updates });
-                updateTopicOffline(id, updates);
-            });
-    } else {
-        // Offline: Update locally
-        updateTopicOffline(id, updates);
-        saveToOfflineQueue('updateTopic', { id: id, updates: updates });
-        addLogOffline(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised");
-        showNotification('অফলাইন রিভিউ', 'রিভিশন অফলাইনে সেভ হয়েছে');
-    }
+    // Open review rating modal instead of directly updating
+    openReviewModal(id);
 }
 
 function updateTopicOffline(id, updates) {
@@ -1159,7 +1691,16 @@ function updateTopicOffline(id, updates) {
             const active = document.getElementById(`nav-${tab}`);
             active.classList.add('tab-active', 'text-white');
             active.classList.remove('text-slate-500');
-            render();
+            
+            // Update URL hash for bookmarking
+            window.location.hash = tab;
+            
+            // Load notes when switching to notes tab
+            if (tab === 'notes') {
+                loadNotes().then(() => render());
+            } else {
+                render();
+            }
         }
 
         function toggleExpand(id) {
@@ -1168,19 +1709,331 @@ function updateTopicOffline(id, updates) {
             render();
         }
 
+// Difficulty badge configuration
+const DIFFICULTY_CONFIG = {
+    Easy: {
+        label: 'সহজ (Easy)',
+        bgColor: 'bg-emerald-100',
+        textColor: 'text-emerald-600',
+        borderColor: 'border-emerald-200'
+    },
+    Medium: {
+        label: 'মাঝারি (Medium)',
+        bgColor: 'bg-yellow-100',
+        textColor: 'text-yellow-600',
+        borderColor: 'border-yellow-200'
+    },
+    Hard: {
+        label: 'কঠিন (Hard)',
+        bgColor: 'bg-rose-100',
+        textColor: 'text-rose-600',
+        borderColor: 'border-rose-200'
+    }
+};
+
+// Get difficulty config with default fallback
+function getDifficultyConfig(difficulty) {
+    return DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.Medium;
+}
+
+// Selected difficulty for new topics
+let selectedDifficulty = 'Medium';
+let selectedQuickDifficulty = 'Medium';
+// Review rating state
+let currentReviewTopicId = null;
+let selectedReviewDifficulty = 'Medium';
+let selectedConfidenceRating = 3;
+
+function selectDifficulty(difficulty) {
+    selectedDifficulty = difficulty;
+    // Update button styles
+    document.getElementById('diff-easy').classList.remove('ring-4', 'ring-emerald-300');
+    document.getElementById('diff-medium').classList.remove('ring-4', 'ring-yellow-300');
+    document.getElementById('diff-hard').classList.remove('ring-4', 'ring-rose-300');
+    
+    if (difficulty === 'Easy') {
+        document.getElementById('diff-easy').classList.add('ring-4', 'ring-emerald-300');
+    } else if (difficulty === 'Medium') {
+        document.getElementById('diff-medium').classList.add('ring-4', 'ring-yellow-300');
+    } else if (difficulty === 'Hard') {
+        document.getElementById('diff-hard').classList.add('ring-4', 'ring-rose-300');
+    }
+}
+
+function selectQuickDifficulty(difficulty) {
+    selectedQuickDifficulty = difficulty;
+    // Update button styles
+    const easyBtn = document.getElementById('quick-diff-easy');
+    const mediumBtn = document.getElementById('quick-diff-medium');
+    const hardBtn = document.getElementById('quick-diff-hard');
+    
+    if (easyBtn && mediumBtn && hardBtn) {
+        easyBtn.classList.remove('ring-4', 'ring-emerald-300');
+        mediumBtn.classList.remove('ring-4', 'ring-yellow-300');
+        hardBtn.classList.remove('ring-4', 'ring-rose-300');
+        
+        if (difficulty === 'Easy') {
+            easyBtn.classList.add('ring-4', 'ring-emerald-300');
+        } else if (difficulty === 'Medium') {
+            mediumBtn.classList.add('ring-4', 'ring-yellow-300');
+        } else if (difficulty === 'Hard') {
+            hardBtn.classList.add('ring-4', 'ring-rose-300');
+        }
+    }
+}
+
+function quickAddTopic() {
+    const input = document.getElementById('quick-input');
+    const subjectSelect = document.getElementById('quick-subject');
+    
+    if (input && input.value.trim() && subjectSelect) {
+        const name = input.value.trim();
+        const subject = subjectSelect.value;
+        addTopic(name, null, subject, selectedQuickDifficulty);
+        input.value = '';
+        // Reset to default
+        selectedQuickDifficulty = 'Medium';
+    }
+}
+
+function toggleSubjectMenu() {
+    const menu = document.getElementById('subject-menu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+async function filterBySubject(subject) {
+    subjectFilterManager.setSubject(subject);
+    currentSubject = subject;
+    toggleSubjectMenu();
+    
+    // If filtering by specific subject, load topics for that subject
+    if (subject !== 'All' && currentUser) {
+        // Show loading state
+        const container = document.getElementById('content-area');
+        const loadingHTML = `
+            <div class="flex items-center justify-center min-h-[60vh]">
+                <div class="text-center space-y-4">
+                    <div class="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+                    <p class="text-slate-600 font-bold">Loading ${subject} topics...</p>
+                </div>
+            </div>
+        `;
+        container.innerHTML = loadingHTML;
+        
+        try {
+            // Load topics for the selected subject
+            const subjectTopics = await subjectFilterManager.loadTopicsForSubject(subject, 50, false);
+            
+            // Update global topics array with subject-filtered topics
+            // This maintains compatibility with the existing render logic
+            if (subjectTopics.length > 0) {
+                // Merge with existing topics, avoiding duplicates
+                const existingIds = new Set(topics.map(t => t.id));
+                const newTopics = subjectTopics.filter(t => !existingIds.has(t.id));
+                topics = [...topics, ...newTopics];
+            }
+        } catch (error) {
+            console.error('Error loading subject topics:', error);
+        }
+    }
+    
+    render();
+}
+
+// Close subject menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('subject-menu');
+    const btn = document.getElementById('subject-menu-btn');
+    if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+function selectReviewDifficulty(difficulty) {
+    selectedReviewDifficulty = difficulty;
+    // Update button styles
+    document.getElementById('review-diff-easy').classList.remove('ring-4', 'ring-emerald-300');
+    document.getElementById('review-diff-medium').classList.remove('ring-4', 'ring-yellow-300');
+    document.getElementById('review-diff-hard').classList.remove('ring-4', 'ring-rose-300');
+    
+    if (difficulty === 'Easy') {
+        document.getElementById('review-diff-easy').classList.add('ring-4', 'ring-emerald-300');
+    } else if (difficulty === 'Medium') {
+        document.getElementById('review-diff-medium').classList.add('ring-4', 'ring-yellow-300');
+    } else if (difficulty === 'Hard') {
+        document.getElementById('review-diff-hard').classList.add('ring-4', 'ring-rose-300');
+    }
+}
+
+function selectConfidenceRating(rating) {
+    selectedConfidenceRating = rating;
+    // Update button styles
+    for (let i = 1; i <= 5; i++) {
+        document.getElementById(`conf-${i}`).classList.remove('ring-4', 'ring-indigo-300');
+    }
+    document.getElementById(`conf-${rating}`).classList.add('ring-4', 'ring-indigo-300');
+}
+
+function openReviewModal(topicId) {
+    const topic = topics.find(t => t.id === topicId);
+    if (!topic) return;
+    
+    currentReviewTopicId = topicId;
+    document.getElementById('review-topic-name').textContent = topic.name;
+    document.getElementById('review-modal').classList.remove('hidden');
+    
+    // Reset to defaults
+    selectReviewDifficulty('Medium');
+    selectConfidenceRating(3);
+    
+    // Refresh icons
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+}
+
+function closeReviewModal() {
+    document.getElementById('review-modal').classList.add('hidden');
+    currentReviewTopicId = null;
+}
+
+function submitReview() {
+    if (!currentReviewTopicId) return;
+    
+    const topic = topics.find(t => t.id === currentReviewTopicId);
+    if (!topic) return;
+    
+    console.log('=== REVIEW DEBUG START ===');
+    console.log('Topic before review:', {
+        name: topic.name,
+        revCount: topic.revCount,
+        stability: topic.stability,
+        easeFactor: topic.easeFactor,
+        lastInterval: topic.lastInterval,
+        startTime: new Date(topic.startTime).toLocaleString(),
+        nextDate: new Date(topic.nextDate).toLocaleString()
+    });
+    
+    // DUAL ALGORITHM APPROACH: Use BOTH algorithms together
+    // FSRS handles stability and retrievability
+    // SM-2 handles ease factor and confidence
+    
+    // Calculate FSRS updates (stability-based)
+    const fsrsUpdates = algorithmManager.calculateFSRS(topic, selectedReviewDifficulty);
+    console.log('FSRS Updates:', {
+        difficulty: selectedReviewDifficulty,
+        newStability: fsrsUpdates.stability,
+        nextDate: new Date(fsrsUpdates.nextDate).toLocaleString(),
+        intervalDays: ((fsrsUpdates.nextDate - Date.now()) / 86400000).toFixed(2)
+    });
+    
+    // Calculate SM-2 updates (confidence-based)
+    const sm2Updates = algorithmManager.calculateSM2(topic, selectedConfidenceRating);
+    console.log('SM-2 Updates:', {
+        confidence: selectedConfidenceRating,
+        newEF: sm2Updates.easeFactor,
+        nextDate: new Date(sm2Updates.nextDate).toLocaleString(),
+        intervalDays: ((sm2Updates.nextDate - Date.now()) / 86400000).toFixed(2)
+    });
+    
+    // Combine both: Use FSRS for nextDate and stability, SM-2 for ease factor
+    // The final nextDate should be based on BOTH algorithms
+    // Take the average of both intervals for balanced scheduling
+    const fsrsInterval = (fsrsUpdates.nextDate - Date.now()) / 86400000;
+    const sm2Interval = (sm2Updates.nextDate - Date.now()) / 86400000;
+    const combinedInterval = Math.round((fsrsInterval + sm2Interval) / 2);
+    
+    console.log('Combined Calculation:', {
+        fsrsInterval: fsrsInterval.toFixed(2) + ' days',
+        sm2Interval: sm2Interval.toFixed(2) + ' days',
+        combinedInterval: combinedInterval + ' days',
+        finalNextDate: new Date(Date.now() + (combinedInterval * 86400000)).toLocaleString()
+    });
+    
+    const updates = {
+        // FSRS properties
+        stability: fsrsUpdates.stability,
+        lastReviewTime: Date.now(),
+        // SM-2 properties
+        easeFactor: sm2Updates.easeFactor,
+        // Combined scheduling
+        nextDate: Date.now() + (combinedInterval * 86400000),
+        revCount: topic.revCount + 1,
+        startTime: Date.now(),
+        // Store the combined interval for next SM-2 calculation
+        lastInterval: combinedInterval
+    };
+    
+    console.log('Final Updates:', {
+        stability: updates.stability,
+        easeFactor: updates.easeFactor,
+        revCount: updates.revCount,
+        lastInterval: updates.lastInterval,
+        startTime: new Date(updates.startTime).toLocaleString(),
+        nextDate: new Date(updates.nextDate).toLocaleString()
+    });
+    console.log('=== REVIEW DEBUG END ===');
+    
+    // Add review history entry
+    const reviewEntry = {
+        timestamp: Date.now(),
+        confidenceRating: selectedConfidenceRating,
+        difficulty: selectedReviewDifficulty,
+        easeFactor: updates.easeFactor,
+        stability: updates.stability,
+        retrievability: algorithmManager.calculateRetrievability(topic) || 100,
+        fsrsInterval: Math.round(fsrsInterval),
+        sm2Interval: Math.round(sm2Interval),
+        combinedInterval: combinedInterval
+    };
+    
+    const reviewHistory = topic.reviewHistory || [];
+    reviewHistory.push(reviewEntry);
+    if (reviewHistory.length > 20) {
+        reviewHistory.shift(); // Keep only last 20
+    }
+    
+    updates.reviewHistory = reviewHistory;
+    
+    if (currentUser && isOnline) {
+        // Online: Update Firebase
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics/${currentReviewTopicId}`).update(updates)
+            .then(() => addLog(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised"))
+            .catch((error) => {
+                console.error("Error:", error);
+                // If Firebase fails, save offline
+                saveToOfflineQueue('updateTopic', { id: currentReviewTopicId, updates: updates });
+                updateTopicOffline(currentReviewTopicId, updates);
+            });
+    } else {
+        // Offline: Update locally
+        updateTopicOffline(currentReviewTopicId, updates);
+        saveToOfflineQueue('updateTopic', { id: currentReviewTopicId, updates: updates });
+        addLogOffline(topic.name, "রিভিশন সম্পন্ন হয়েছে", "revised");
+        showNotification('অফলাইন রিভিউ', 'রিভিশন অফলাইনে সেভ হয়েছে');
+    }
+    
+    closeReviewModal();
+}
+
      function toggleModal(show) {
     if (show && !currentUser) {
         alert("প্রথমে লগইন করুন!");
         return;
     }
     document.getElementById('modal').classList.toggle('hidden', !show);
-    if(show) document.getElementById('modal-date').valueAsDate = new Date();
+    if(show) {
+        document.getElementById('modal-date').valueAsDate = new Date();
+        // Reset to default difficulty
+        selectDifficulty('Medium');
+    }
 }
         function addTopicManual() {
             const n = document.getElementById('modal-name').value;
             const d = document.getElementById('modal-date').value;
-            if(n && d) {
-                addTopic(n, d);
+            const subject = document.getElementById('modal-subject').value;
+            if(n && d && subject) {
+                addTopic(n, d, subject, selectedDifficulty);
                 toggleModal(false);
                 document.getElementById('modal-name').value = '';
             }
@@ -1201,6 +2054,135 @@ function updateTopicOffline(id, updates) {
             if (fillElement) {
                 fillElement.style.width = `${avg}%`;
             }
+        }
+
+        // --- Notes Functions ---
+        function handleNotesInput() {
+            const editor = document.getElementById('notes-editor');
+            const saveBtn = document.getElementById('save-notes-btn');
+            
+            if (editor && saveBtn) {
+                notesContent = editor.value;
+                notesModified = true;
+                saveBtn.disabled = false;
+            }
+        }
+
+        async function saveNotes() {
+            if (!currentUser) {
+                alert('প্রথমে লগইন করুন!');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('save-notes-btn');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> <span>সেভ হচ্ছে...</span>';
+            }
+            
+            const notesData = {
+                content: notesContent,
+                lastModified: Date.now()
+            };
+            
+            try {
+                if (isOnline) {
+                    // Save to Firebase
+                    await database.ref(`users/${currentUser.uid}/spacedRepetition/notes`).set(notesData);
+                    notesLastSaved = notesData.lastModified;
+                    notesModified = false;
+                    showNotification('নোটস সেভ হয়েছে', 'আপনার নোটস সফলভাবে সেভ হয়েছে');
+                } else {
+                    // Save to IndexedDB
+                    await saveNotesOffline(notesData);
+                    notesLastSaved = notesData.lastModified;
+                    notesModified = false;
+                    showNotification('অফলাইন সেভ', 'নোটস অফলাইনে সেভ হয়েছে। অনলাইন হলে সিঙ্ক হবে।');
+                }
+                
+                // Reset button to disabled state after successful save
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> <span>নোটস সেভ করুন</span>';
+                    lucide.createIcons();
+                }
+                
+                render();
+            } catch (error) {
+                console.error('Error saving notes:', error);
+                showNotification('ত্রুটি', 'নোটস সেভ করতে ব্যর্থ হয়েছে');
+                
+                // Re-enable button on error to allow retry
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> <span>নোটস সেভ করুন</span>';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        async function loadNotes() {
+            if (!currentUser) return;
+            
+            try {
+                if (isOnline) {
+                    // Load from Firebase
+                    const snapshot = await database.ref(`users/${currentUser.uid}/spacedRepetition/notes`).once('value');
+                    const data = snapshot.val();
+                    
+                    if (data) {
+                        notesContent = data.content || '';
+                        notesLastSaved = data.lastModified || null;
+                    }
+                } else {
+                    // Load from IndexedDB
+                    const offlineNotes = await loadNotesOffline();
+                    if (offlineNotes) {
+                        notesContent = offlineNotes.content || '';
+                        notesLastSaved = offlineNotes.lastModified || null;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notes:', error);
+            }
+        }
+
+        function saveNotesOffline(notesData) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject(new Error('IndexedDB not initialized'));
+                    return;
+                }
+                
+                const transaction = db.transaction(['offlineNotes'], 'readwrite');
+                const store = transaction.objectStore('offlineNotes');
+                
+                // Use fixed key for notes
+                const request = store.put({ id: 'user_notes', ...notesData });
+                
+                request.onsuccess = () => {
+                    // Queue for sync
+                    saveToOfflineQueue('saveNotes', notesData);
+                    resolve();
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function loadNotesOffline() {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    resolve(null);
+                    return;
+                }
+                
+                const transaction = db.transaction(['offlineNotes'], 'readonly');
+                const store = transaction.objectStore('offlineNotes');
+                const request = store.get('user_notes');
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
         }
 
         // --- Render Functions ---
@@ -1243,6 +2225,12 @@ function updateTopicOffline(id, updates) {
 
             if (currentTab === 'dashboard' || currentTab === 'focus') {
                 let filtered = topics.filter(t => t.name.toLowerCase().includes(query));
+                
+                // Apply subject filter
+                if (currentSubject !== 'All') {
+                    filtered = filtered.filter(t => t.subject === currentSubject);
+                }
+                
                 if (currentTab === 'focus') filtered = filtered.filter(t => calculateMetrics(t).isDue);
 
                 // Pagination: show items based on current page
@@ -1251,25 +2239,78 @@ function updateTopicOffline(id, updates) {
                 const endIndex = currentDisplayPage * itemsPerPage;
                 const displayedTopics = filtered.slice(startIndex, endIndex);
                 const hasMoreToShow = endIndex < filtered.length;
+                
+                // Check if more topics available in Firebase for current subject
+                const hasMoreInFirebase = currentSubject !== 'All' ? subjectFilterManager.hasMoreTopics(currentSubject) : !allTopicsLoaded;
+                const loadedCount = currentSubject !== 'All' ? subjectFilterManager.getLoadedCount(currentSubject) : topics.length;
 
                 container.innerHTML = `
                     <div class="max-w-6xl mx-auto space-y-10 font-bn">
+                        ${currentTab === 'dashboard' || currentTab === 'focus' ? `
+                            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 rounded-2xl flex items-center justify-between shadow-xl">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="filter" class="w-5 h-5 text-white"></i>
+                                    <span class="text-sm font-bold text-white">বিষয়: ${currentSubject === 'All' ? 'সব বিষয়' : currentSubject}</span>
+                                </div>
+                                <div class="relative">
+                                    <button onclick="toggleSubjectMenu()" id="subject-menu-btn" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase transition-all flex items-center gap-2">
+                                        <i data-lucide="menu" class="w-4 h-4"></i>
+                                        <span class="hidden md:inline">বিষয় পরিবর্তন</span>
+                                    </button>
+                                    <div id="subject-menu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50">
+                                        <button onclick="filterBySubject('All')" class="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-all font-bold text-slate-700 ${currentSubject === 'All' ? 'bg-indigo-100 text-indigo-700' : ''}">
+                                            সব বিষয় (All Subjects)
+                                        </button>
+                                        ${SUBJECTS.map(subject => `
+                                            <button onclick="filterBySubject('${subject}')" class="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-all font-bold text-slate-700 ${currentSubject === subject ? 'bg-indigo-100 text-indigo-700' : ''}">
+                                                ${subject === 'Math' ? 'গণিত' : subject === 'Physics' ? 'পদার্থবিজ্ঞান' : subject === 'Chemistry' ? 'রসায়ন' : subject === 'Biology' ? 'জীববিজ্ঞান' : subject === 'Bangla' ? 'বাংলা' : subject === 'English' ? 'ইংরেজি' : 'আইসিটি'} (${subject})
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
                         ${currentTab === 'dashboard' ? `
-                            <div class="bg-white p-3 rounded-[2rem] shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-3 border border-slate-100">
-                                <textarea id="quick-input" class="flex-1 bg-transparent px-6 py-4 outline-none text-xl font-bold min-h-[70px] placeholder:text-slate-300" placeholder="আজকে নতুন কি শিখলেন?"></textarea>
-                                <button onclick="addTopic(document.getElementById('quick-input').value); document.getElementById('quick-input').value = '';" class="bg-slate-900 text-white px-10 py-4 rounded-[1.5rem] font-black hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200 uppercase tracking-widest text-xs">অ্যাড করুন</button>
+                            <div class="bg-white p-4 md:p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 flex flex-col gap-4 border border-slate-100">
+                                <div class="flex flex-col md:flex-row gap-3">
+                                    <textarea id="quick-input" class="flex-1 bg-transparent px-6 py-4 outline-none text-xl font-bold min-h-[70px] placeholder:text-slate-300" placeholder="আজকে নতুন কি শিখলেন?"></textarea>
+                                    <button onclick="quickAddTopic()" class="bg-slate-900 text-white px-10 py-4 rounded-[1.5rem] font-black hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-slate-200 uppercase tracking-widest text-xs">অ্যাড করুন</button>
+                                </div>
+                                <div class="flex flex-col md:flex-row gap-3 items-center">
+                                    <select id="quick-subject" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bn text-sm">
+                                        <option value="Math">গণিত (Math)</option>
+                                        <option value="Physics">পদার্থবিজ্ঞান (Physics)</option>
+                                        <option value="Chemistry">রসায়ন (Chemistry)</option>
+                                        <option value="Biology">জীববিজ্ঞান (Biology)</option>
+                                        <option value="Bangla">বাংলা (Bangla)</option>
+                                        <option value="English">ইংরেজি (English)</option>
+                                        <option value="ICT" selected>আইসিটি (ICT)</option>
+                                    </select>
+                                    <div class="flex gap-2">
+                                        <button onclick="selectQuickDifficulty('Easy')" id="quick-diff-easy" class="px-4 py-2 bg-emerald-50 border-2 border-emerald-200 rounded-xl font-bold text-emerald-700 hover:bg-emerald-100 transition-all text-xs">সহজ</button>
+                                        <button onclick="selectQuickDifficulty('Medium')" id="quick-diff-medium" class="px-4 py-2 bg-yellow-50 border-2 border-yellow-200 rounded-xl font-bold text-yellow-700 hover:bg-yellow-100 transition-all text-xs ring-4 ring-yellow-300">মাঝারি</button>
+                                        <button onclick="selectQuickDifficulty('Hard')" id="quick-diff-hard" class="px-4 py-2 bg-rose-50 border-2 border-rose-200 rounded-xl font-bold text-rose-700 hover:bg-rose-100 transition-all text-xs">কঠিন</button>
+                                    </div>
+                                </div>
                             </div>
                         ` : ''}
 
                         ${topics.length > 0 ? `
-                            <div class="bg-indigo-50 p-4 rounded-2xl flex items-center justify-between">
+                            <div class="bg-indigo-50 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-3">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="info" class="w-5 h-5 text-indigo-600"></i>
-                                    <span class="text-sm font-bold text-indigo-900">Showing ${displayedTopics.length} of ${filtered.length} topics ${!allTopicsLoaded ? '(More in Firebase)' : ''}</span>
+                                    <span class="text-sm font-bold text-indigo-900">Showing ${displayedTopics.length} of ${filtered.length} topics ${hasMoreInFirebase ? '(More available in Firebase)' : ''}</span>
                                 </div>
-                                ${!allTopicsLoaded ? `
-                                    <button onclick="loadMoreTopics()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-indigo-700 transition-all">
-                                        Load More from Firebase
+                                ${hasMoreInFirebase && currentSubject !== 'All' ? `
+                                    <button onclick="loadMoreTopicsForSubject()" id="load-more-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-indigo-700 transition-all flex items-center gap-2">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                        <span>Load More (${currentSubject})</span>
+                                    </button>
+                                ` : hasMoreInFirebase && currentSubject === 'All' ? `
+                                    <button onclick="loadMoreTopics()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-indigo-700 transition-all flex items-center gap-2">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                        <span>Load More from Firebase</span>
                                     </button>
                                 ` : ''}
                             </div>
@@ -1279,26 +2320,49 @@ function updateTopicOffline(id, updates) {
                             ${displayedTopics.map(t => {
                                 const m = calculateMetrics(t);
                                 const expanded = expandedTopics.has(t.id);
+                                const subjectColors = {
+                                    'Math': 'bg-blue-100 text-blue-700',
+                                    'Physics': 'bg-purple-100 text-purple-700',
+                                    'Chemistry': 'bg-green-100 text-green-700',
+                                    'Biology': 'bg-emerald-100 text-emerald-700',
+                                    'Bangla': 'bg-pink-100 text-pink-700',
+                                    'English': 'bg-orange-100 text-orange-700',
+                                    'ICT': 'bg-indigo-100 text-indigo-700'
+                                };
+                                const subjectColor = subjectColors[t.subject] || 'bg-slate-100 text-slate-700';
+                                
+                                // Get difficulty badge configuration
+                                const difficulty = t.difficulty || 'Medium';
+                                const diffConfig = getDifficultyConfig(difficulty);
+                                
                                 return `
                                     <div class="glass-card rounded-[1.5rem] md:rounded-[2.5rem] p-4 md:p-8 flex flex-col gap-4 md:gap-8 ${m.isDue ? 'animate-due-warning' : ''}">
                                         <div class="flex items-start gap-4 flex-1 w-full" onclick="toggleExpand('${t.id}')">
-                                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-[1.2rem] md:rounded-[1.8rem] bg-slate-50 flex flex-col items-center justify-center shrink-0 shadow-inner border border-slate-100">
-                                                <span class="text-lg md:text-2xl font-black ${m.textColor}">${m.brainSave}%</span>
-                                                <span class="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest">Brain</span>
+                                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-[1.2rem] md:rounded-[1.8rem] ${m.circleBgColor} flex flex-col items-center justify-center shrink-0 shadow-inner border-2 ${m.circleBorderColor}">
+                                                <span class="text-lg md:text-2xl font-black ${m.textColor}">${m.retrievability}%</span>
+                                                <span class="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest">R</span>
                                             </div>
                                             <div class="min-w-0 flex-1">
-                                                <h3 class="text-lg md:text-2xl font-black text-slate-800 leading-tight mb-2 ${expanded ? 'whitespace-pre-wrap' : 'line-clamp-2'}">${t.name}</h3>
+                                                <div class="flex items-start gap-2 mb-2 flex-wrap">
+                                                    <h3 class="text-lg md:text-2xl font-black text-slate-800 leading-tight flex-1 ${expanded ? 'whitespace-pre-wrap' : 'line-clamp-2'}">${t.name}</h3>
+                                                    ${t.subject ? `<span class="px-2 py-1 rounded-lg text-xs font-bold ${subjectColor} shrink-0">${t.subject}</span>` : ''}
+                                                    <span class="px-2 md:px-3 py-1 rounded-lg text-xs font-bold ${diffConfig.bgColor} ${diffConfig.textColor} border ${diffConfig.borderColor} shrink-0">
+                                                        ${diffConfig.label}
+                                                    </span>
+                                                </div>
                                                 <div class="flex flex-wrap gap-2 md:gap-4">
                                                     <span class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-slate-400"><i data-lucide="history" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> রিভিশন: ${t.revCount}</span>
                                                     <span class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-slate-400"><i data-lucide="calendar" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> শুরু: ${m.addedStr}</span>
                                                     <span class="flex items-center gap-1 text-[10px] md:text-xs font-bold ${m.isDue ? 'text-rose-600' : 'text-blue-600'}"><i data-lucide="calendar-check" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> পরবর্তী: ${m.nextDateStr}</span>
+                                                    ${t.stability ? `<span class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-purple-600"><i data-lucide="zap" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> S: ${Math.round(t.stability)}d</span>` : ''}
+                                                    ${t.easeFactor ? `<span class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-teal-600"><i data-lucide="trending-up" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> EF: ${t.easeFactor.toFixed(2)}</span>` : ''}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="w-full space-y-3">
                                             <div class="flex justify-between items-end">
-                                                <span class="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">সিঙ্ক স্ট্যাটাস</span>
+                                                <span class="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Time Until Review</span>
                                                 <span class="text-xs md:text-sm font-bold ${m.isDue ? 'text-rose-600 font-black' : 'text-slate-600'}">${m.timerStr}</span>
                                             </div>
                                             <div class="progress-bar-bg">
@@ -1342,7 +2406,7 @@ function updateTopicOffline(id, updates) {
                     <div class="max-w-4xl mx-auto space-y-8 font-bn">
                         <div class="flex items-center justify-between">
                             <h2 class="text-3xl font-black text-slate-900">অ্যাক্টিভিটি টাইমলাইন</h2>
-                            <span class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase">সর্বশেষ ২০০টি রেকর্ড</span>
+                            <span class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase">${logs.length} রেকর্ড লোড হয়েছে</span>
                         </div>
                         <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
                             <div class="divide-y divide-slate-50">
@@ -1364,6 +2428,17 @@ function updateTopicOffline(id, updates) {
                                 `).join('')}
                             </div>
                         </div>
+                        ${!allLogsLoaded ? `
+                            <div class="text-center py-6">
+                                <button 
+                                    id="load-more-logs-btn"
+                                    onclick="loadMoreLogs()" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-3 mx-auto">
+                                    <i data-lucide="download" class="w-5 h-5"></i>
+                                    <span>আরও দেখুন (Load More)</span>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             } else if (currentTab === 'analytics') {
@@ -1414,6 +2489,51 @@ function updateTopicOffline(id, updates) {
                     </div>
                 `;
                 setTimeout(renderCharts, 100);
+            } else if (currentTab === 'notes') {
+                // Notes tab rendering
+                const lastSaved = notesLastSaved ? new Date(notesLastSaved).toLocaleString('bn-BD') : null;
+                
+                container.innerHTML = `
+                    <div class="max-w-4xl mx-auto space-y-6 font-bn">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-3xl font-black text-slate-900">আপনার নোটস</h2>
+                                <p class="text-sm text-slate-500 font-bold mt-1">
+                                    ${lastSaved ? `শেষ সেভ: ${lastSaved}` : 'এখনো সেভ করা হয়নি'}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                ${isOnline ? 
+                                    '<span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold flex items-center gap-1"><i data-lucide="wifi" class="w-3 h-3"></i> অনলাইন</span>' : 
+                                    '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold flex items-center gap-1"><i data-lucide="wifi-off" class="w-3 h-3"></i> অফলাইন</span>'
+                                }
+                            </div>
+                        </div>
+                        
+                        <!-- Notes Editor -->
+                        <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+                            <textarea 
+                                id="notes-editor"
+                                oninput="handleNotesInput()"
+                                placeholder="আপনার নোটস লিখুন..."
+                                class="w-full p-8 md:p-10 bg-transparent outline-none text-base md:text-lg min-h-[400px] resize-none font-bn"
+                            >${notesContent}</textarea>
+                        </div>
+                        
+                        <!-- Save Button -->
+                        <div class="flex justify-end">
+                            <button 
+                                id="save-notes-btn"
+                                onclick="saveNotes()" 
+                                disabled
+                                class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-3">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                <span>নোটস সেভ করুন</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
             }
             lucide.createIcons();
         }
@@ -1533,7 +2653,13 @@ function updateTopicOffline(id, updates) {
         setInterval(() => { if (currentTab === 'dashboard' || currentTab === 'focus') render(); }, 30000);
         
         window.addEventListener('load', () => {
-            render();
+            // Handle hash navigation on page load
+            const hash = window.location.hash.substring(1);
+            if (hash && ['dashboard', 'focus', 'history', 'analytics', 'notes'].includes(hash)) {
+                switchTab(hash);
+            } else {
+                render();
+            }
             updateSidebarStats();
             lucide.createIcons();
         });
@@ -2285,14 +3411,5 @@ function updateTopicOffline(id, updates) {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
 
