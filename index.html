@@ -1037,6 +1037,7 @@ class SubjectFilterManager {
         this.subjectCache = {};
         this.subjectLoadedCount = {};
         this.subjectHasMore = {};
+        console.log('Subject filter cache cleared');
     }
 
     clearSubjectCache(subject) {
@@ -1120,25 +1121,30 @@ function handleLogout() {
 }
 
 auth.onAuthStateChanged(async (user) => {
+    // CRITICAL: Clear all existing data when user changes
+    cleanupFirebaseListeners();
+    topics = [];
+    logs = [];
+    notesContent = '';
+    notesLastSaved = null;
+    expandedTopics.clear();
+    subjectFilterManager.clearCache(); // Clear subject filter cache
+    
     currentUser = user;
     if (user) {
+        console.log('User logged in:', user.uid);
         initializeFirebaseListeners(user.uid);
         migrateLocalStorageToFirebase(user.uid);
         
-        // Run migration for existing topics
-        if (topics.length > 0) {
-            const migratedTopics = await migrationManager.migrateExistingTopics(topics);
-            topics = migratedTopics;
-            await migrationManager.saveMigratedTopics(migratedTopics);
-            render();
-        }
+        // Load notes for this user
+        await loadNotes();
         
         // Sync any offline data
         if (isOnline) {
             setTimeout(syncOfflineData, 1000);
         }
     } else {
-        cleanupFirebaseListeners();
+        console.log('User logged out');
         // Load offline data when not logged in
         try {
             const offlineTopics = await loadTopicsOffline();
@@ -1167,8 +1173,12 @@ const itemsPerPage = 50;
 let logsPageSize = 50;
 let logsLoadedCount = 50;
 let allLogsLoaded = false;
+let retentionChartInstance = null;
+let activityChartInstance = null;
 
 function initializeFirebaseListeners(uid) {
+    console.log('Initializing Firebase listeners for user:', uid);
+    
     // Use limitToLast for pagination - load most recent topics first
     topicsListener = database.ref(`users/${uid}/spacedRepetition/topics`)
         .orderByChild('createdAt')
@@ -1177,8 +1187,14 @@ function initializeFirebaseListeners(uid) {
             const data = snapshot.val();
             let loadedTopics = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
             
-            // Run migration on loaded topics
-            loadedTopics = await migrationManager.migrateExistingTopics(loadedTopics);
+            // Only run migration if topics actually need it (not already migrated)
+            const needsMigration = loadedTopics.some(t => !t.subject || t.easeFactor === undefined || t.stability === undefined);
+            if (needsMigration) {
+                console.log('Running migration on loaded topics');
+                loadedTopics = await migrationManager.migrateExistingTopics(loadedTopics);
+                await migrationManager.saveMigratedTopics(loadedTopics);
+            }
+            
             topics = loadedTopics;
             
             // Check if we've loaded all topics
@@ -1310,10 +1326,19 @@ function loadMoreLogs() {
 }
 
 function cleanupFirebaseListeners() {
-    if (topicsListener && currentUser) {
-        database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).off('value', topicsListener);
-        database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).off('value', logsListener);
+    if (!currentUser) {
         topicsListener = null;
+        logsListener = null;
+        return;
+    }
+
+    if (topicsListener) {
+        database.ref(`users/${currentUser.uid}/spacedRepetition/topics`).off('value', topicsListener);
+        topicsListener = null;
+    }
+
+    if (logsListener) {
+        database.ref(`users/${currentUser.uid}/spacedRepetition/logs`).off('value', logsListener);
         logsListener = null;
     }
 }
@@ -2543,6 +2568,16 @@ function submitReview() {
             const ctx2 = document.getElementById('activityChart')?.getContext('2d');
             if (!ctx1 || !ctx2) return;
 
+            // Prevent "Canvas is already in use" errors when re-rendering analytics.
+            if (retentionChartInstance) {
+                retentionChartInstance.destroy();
+                retentionChartInstance = null;
+            }
+            if (activityChartInstance) {
+                activityChartInstance.destroy();
+                activityChartInstance = null;
+            }
+
             // Limit chart data to last 100 topics for performance with large datasets
             const sorted = [...topics].sort((a,b) => a.createdAt - b.createdAt).slice(-100);
             const labels = sorted.map(t => t.name.length > 12 ? t.name.substring(0, 12) + '..' : t.name);
@@ -2559,7 +2594,7 @@ function submitReview() {
             container2.style.height = '300px';
             
             // Retention Chart
-            new Chart(ctx1, {
+            retentionChartInstance = new Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels,
@@ -2604,7 +2639,7 @@ function submitReview() {
             });
 
             // Activity Chart
-            new Chart(ctx2, {
+            activityChartInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: {
                     labels,
@@ -2917,35 +2952,64 @@ function submitReview() {
             const handleLogout = () => auth.signOut();
 
             useEffect(() => {
+                let activeRefs = [];
+                const detachRealtimeListeners = () => {
+                    activeRefs.forEach(ref => ref.off());
+                    activeRefs = [];
+                };
+
                 const unsubscribe = auth.onAuthStateChanged((u) => {
+                    detachRealtimeListeners();
+
                     if (u) {
+                        console.log('Reality Tracking: User logged in:', u.uid);
+                        setLoading(true);
                         setUser(u);
-                        database.ref(`users/${u.uid}/history`).on('value', (snap) => {
+                        
+                        // Clear existing data before loading new user's data
+                        setHistory([]);
+                        setNotes([]);
+                        setTimers([]);
+                        
+                        const historyRef = database.ref(`users/${u.uid}/history`);
+                        const notesRef = database.ref(`users/${u.uid}/notes`);
+                        const settingsRef = database.ref(`users/${u.uid}/settings`);
+                        const timersRef = database.ref(`users/${u.uid}/timers`);
+                        activeRefs = [historyRef, notesRef, settingsRef, timersRef];
+
+                        historyRef.on('value', (snap) => {
                             const val = snap.val();
                             setHistory(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).sort((a,b) => b.id.localeCompare(a.id)) : []);
                             setLoading(false);
                         });
-                        database.ref(`users/${u.uid}/notes`).on('value', (snap) => {
+                        notesRef.on('value', (snap) => {
                             const val = snap.val();
                             setNotes(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : []);
                         });
-                        database.ref(`users/${u.uid}/settings`).on('value', (snap) => {
+                        settingsRef.on('value', (snap) => {
                             const val = snap.val();
                             if(val) {
                                 if(val.hsc) setHscTarget(val.hsc);
                                 if(val.buet) setBuetTarget(val.buet);
                             }
                         });
-                        database.ref(`users/${u.uid}/timers`).on('value', (snap) => {
+                        timersRef.on('value', (snap) => {
                             const val = snap.val();
                             setTimers(val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : []);
                         });
                     } else {
+                        console.log('Reality Tracking: User logged out');
                         setUser(null);
+                        setHistory([]);
+                        setNotes([]);
+                        setTimers([]);
                         setLoading(false);
                     }
                 });
-                return () => unsubscribe();
+                return () => {
+                    detachRealtimeListeners();
+                    unsubscribe();
+                };
             }, []);
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
